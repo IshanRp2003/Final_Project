@@ -30,7 +30,7 @@ public class DataSeeder implements CommandLineRunner {
             new String[] { "Chanuka", "chanukaag@re.com", "chanuka1234" },
             new String[] { "Hasitha", "hasithaag@re.com", "hasitha1234" },
             new String[] { "Sanjana", "sanjanaag@re.com", "sanjana1234" },
-            new String[] { "Chanuka2", "chanuka2ag@re.com", "chanuka21234" },
+            new String[] { "Maneesha", "maneeshaag@re.com", "maneesha1234" },
             new String[] { "Hiranya", "hiranyaag@re.com", "hiranya1234" },
             new String[] { "Kaveesha", "kaveeshaag@re.com", "kaveesha1234" },
             new String[] { "Chathurya", "chathuryaag@re.com", "chathurya1234" });
