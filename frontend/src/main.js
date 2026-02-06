@@ -17,6 +17,7 @@ api.interceptors.request.use((config) => {
 });
 
 // Auth Functions
+// Auth Functions
 export const login = async (email, password) => {
     try {
         const response = await api.post('/auth/login', { email, password });
@@ -26,7 +27,8 @@ export const login = async (email, password) => {
         const user = {
             name: response.data.name,
             role: response.data.role,
-            email: email // Store email for display purposes
+            email: email,
+            agentId: response.data.agentId // Ensure agentId is stored if available
         };
         localStorage.setItem('user', JSON.stringify(user));
 
@@ -37,9 +39,11 @@ export const login = async (email, password) => {
         if (redirectUrl) {
             window.location.href = redirectUrl;
         } else {
-            // Role-based Redirect
+            // === UPDATED REDIRECT LOGIC ===
             if (user.role === 'ADMIN') {
                 window.location.href = '/admin-dashboard.html';
+            } else if (user.role === 'AGENT') {
+                window.location.href = '/agent-dashboard.html'; // Redirect Agents here
             } else {
                 window.location.href = '/user-dashboard.html';
             }

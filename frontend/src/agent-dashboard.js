@@ -9,17 +9,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const user = JSON.parse(userStr);
 
     // 2. Update Profile UI
-    const firstName = user.name ? user.name.split(' ')[0] : 'Agent';
-    const initial = firstName.charAt(0).toUpperCase();
+    // NEW LOGIC: Fetch the unique agent profile using their ID
+    if (user.agentId) {
+        fetch(`http://localhost:8080/api/agents/${user.agentId}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        })
+            .then(res => res.json())
+            .then(agentData => {
+                // Update the UI with the agent's real name from the database
+                const profileNameEl = document.getElementById('sidebar-name');
+                const headerNameEl = document.getElementById('header-name');
+                const sidebarAvatar = document.getElementById('sidebar-avatar');
 
-    const profileNameEl = document.getElementById('sidebar-name');
-    const profileAvatarEl = document.getElementById('sidebar-avatar');
-    const headerNameEl = document.getElementById('header-name');
+                if (profileNameEl) profileNameEl.textContent = agentData.name;
+                if (headerNameEl) headerNameEl.textContent = agentData.name.split(' ')[0];
 
-    if (profileNameEl) profileNameEl.textContent = user.name || 'Agent';
-    if (profileAvatarEl) profileAvatarEl.textContent = initial;
-    if (headerNameEl) headerNameEl.textContent = firstName;
-
+                // Update the profile picture
+                // If the agent has a photo URL in the database, show it
+                if (sidebarAvatar && agentData.profileImageUrl) {
+                    sidebarAvatar.innerHTML = `<img src="${agentData.profileImageUrl}" class="w-full h-full object-cover rounded-full" />`;
+                }
+            })
+            .catch(err => console.error("Could not load agent profile:", err));
+    }
     // 3. Initialize Features
     initPerformanceChart();
     initModalLogic(user);
