@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Agent Dashboard - Spring Realty</title>
+    <title>Agent Dashboard - Real Estate</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
         rel="stylesheet" />
@@ -36,6 +36,21 @@
             font-family: 'Manrope', sans-serif;
         }
 
+        /* Modal form fields must override dashboard dark theme text color */
+        #addPropertyModal .modal-panel,
+        #addPropertyModal input,
+        #addPropertyModal select,
+        #addPropertyModal textarea {
+            color: #111827;
+            caret-color: #111827;
+        }
+
+        #addPropertyModal input::placeholder,
+        #addPropertyModal textarea::placeholder {
+            color: #9ca3af;
+            opacity: 1;
+        }
+
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
@@ -63,9 +78,9 @@
             <div class="flex items-center gap-3">
                 <div
                     class="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-green-800 flex items-center justify-center text-black font-bold">
-                    SR</div>
+                    RE</div>
                 <div class="flex flex-col">
-                    <h1 class="text-white text-base font-bold leading-normal">Spring Realty</h1>
+                    <h1 class="text-white text-base font-bold leading-normal">Real Estate</h1>
                     <p class="text-gray-400 text-xs font-normal">Agent Portal</p>
                 </div>
             </div>
@@ -87,10 +102,10 @@
                 <span class="material-symbols-outlined">group</span>
                 <span class="text-sm font-medium">Leads</span>
             </a>
-            <a href="/inquiry-chat.html"
+            <a href="/agent-inquiries.html"
                 class="flex items-center gap-3 px-3 py-3 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-colors">
-                <span class="material-symbols-outlined">chat_bubble</span>
-                <span class="text-sm font-medium">Messages</span>
+                <span class="material-symbols-outlined">mail</span>
+                <span class="text-sm font-medium">Inquiries</span>
                 <span class="ml-auto bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">3</span>
             </a>
             <a href="#"
@@ -392,180 +407,185 @@
         </div>
     </main>
 
-    <!-- Modal -->
-    <div id="listing-modal"
-        class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div id="addPropertyModal" class="fixed inset-0 z-[120] hidden">
+        <div class="absolute inset-0 z-0 bg-black/50 backdrop-blur-sm" onclick="closeAddPropertyModal()"></div>
+
         <div
-            class="bg-[#111] w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl border border-[#222] shadow-2xl relative">
-            <button id="btn-close-modal"
-                class="absolute top-4 right-4 text-gray-400 hover:text-white z-10 p-2 rounded-full hover:bg-white/10 transition-colors">
-                <span class="material-symbols-outlined">close</span>
-            </button>
-            <div class="p-8">
-                <div class="text-center mb-8">
-                    <h2 class="text-2xl font-bold text-white">List Your Property</h2>
-                    <p class="text-gray-400">Fill out details below for review.</p>
+            class="modal-panel absolute right-0 top-0 z-10 h-full w-full max-w-lg bg-white shadow-2xl overflow-y-auto transform transition-transform duration-300">
+            <div class="p-6 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
+                <h2 class="text-xl font-bold text-gray-800">Add New Property</h2>
+                <button onclick="closeAddPropertyModal()" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+
+            <form id="addPropertyForm" class="p-6 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Title *</label>
+                        <input type="text" name="title" required
+                            class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-blue-500 outline-none bg-white"
+                            placeholder="e.g., Luxury Villa in Colombo">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Address *</label>
+                        <input type="text" name="address" required
+                            class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-blue-500 outline-none bg-white"
+                            placeholder="e.g., 123 Main Street, Colombo">
+                    </div>
                 </div>
-                <form id="dashboardListingForm" class="space-y-6">
-                    <!-- Basic Info -->
-                    <div class="space-y-4">
-                        <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                            <span
-                                class="w-6 h-6 rounded bg-primary/20 flex items-center justify-center text-primary text-xs">1</span>
-                            Basic Info
-                        </h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-400 mb-1">Type</label>
-                                <select id="dashboardPropertyType" required
-                                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary/50">
-                                    <option value="" class="bg-[#111]">Select Type</option>
-                                    <option value="HOUSE" class="bg-[#111]">House</option>
-                                    <option value="APARTMENT" class="bg-[#111]">Apartment</option>
-                                    <option value="LAND" class="bg-[#111]">Land</option>
-                                    <option value="COMMERCIAL" class="bg-[#111]">Commercial</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-400 mb-1">Price (LKR)</label>
-                                <input type="number" id="dashboardPropertyPrice" required placeholder="e.g 25000000"
-                                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary/50">
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-400 mb-1">Address</label>
-                                <input type="text" id="dashboardPropertyAddress" required placeholder="Full Address"
-                                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary/50">
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-400 mb-1">Title</label>
-                                <input type="text" id="dashboardPropertyTitle" required placeholder="Property Title"
-                                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary/50">
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-400 mb-1">Description</label>
-                                <textarea id="dashboardPropertyDescription" rows="3" placeholder="Description..."
-                                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"></textarea>
-                            </div>
-                        </div>
-                    </div>
 
-                    <!-- Details -->
-                    <div class="space-y-4">
-                        <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                            <span
-                                class="w-6 h-6 rounded bg-primary/20 flex items-center justify-center text-primary text-xs">2</span>
-                            Details
-                        </h3>
-                        <div class="grid grid-cols-3 gap-4">
-                            <div><label class="block text-xs font-medium text-gray-400 mb-1">Beds</label><input
-                                    type="number" id="dashboardBedrooms" placeholder="0"
-                                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary/50">
-                            </div>
-                            <div><label class="block text-xs font-medium text-gray-400 mb-1">Baths</label><input
-                                    type="number" id="dashboardBathrooms" placeholder="0"
-                                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary/50">
-                            </div>
-                            <div><label class="block text-xs font-medium text-gray-400 mb-1">SqFt</label><input
-                                    type="number" id="dashboardAreaSqFt" placeholder="0"
-                                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary/50">
-                            </div>
-                        </div>
-                        <!-- Amenities Checkboxes -->
-                        <div class="col-span-full">
-                            <label class="block text-sm font-medium text-gray-400 mb-2">Amenities</label>
-                            <div class="grid grid-cols-2 gap-2">
-                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox"
-                                        name="amenities" value="Pool"
-                                        class="w-4 h-4 rounded bg-white/10 border-white/20 text-primary focus:ring-primary"><span
-                                        class="text-sm text-gray-300">Pool</span></label>
-                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox"
-                                        name="amenities" value="Gym"
-                                        class="w-4 h-4 rounded bg-white/10 border-white/20 text-primary focus:ring-primary"><span
-                                        class="text-sm text-gray-300">Gym</span></label>
-                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox"
-                                        name="amenities" value="Parking"
-                                        class="w-4 h-4 rounded bg-white/10 border-white/20 text-primary focus:ring-primary"><span
-                                        class="text-sm text-gray-300">Parking</span></label>
-                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox"
-                                        name="amenities" value="Garden"
-                                        class="w-4 h-4 rounded bg-white/10 border-white/20 text-primary focus:ring-primary"><span
-                                        class="text-sm text-gray-300">Garden</span></label>
-                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox"
-                                        name="amenities" value="Security"
-                                        class="w-4 h-4 rounded bg-white/10 border-white/20 text-primary focus:ring-primary"><span
-                                        class="text-sm text-gray-300">Security</span></label>
-                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox"
-                                        name="amenities" value="AC"
-                                        class="w-4 h-4 rounded bg-white/10 border-white/20 text-primary focus:ring-primary"><span
-                                        class="text-sm text-gray-300">AC</span></label>
-                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox"
-                                        name="amenities" value="Furnished"
-                                        class="w-4 h-4 rounded bg-white/10 border-white/20 text-primary focus:ring-primary"><span
-                                        class="text-sm text-gray-300">Furnished</span></label>
-                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox"
-                                        name="amenities" value="Balcony"
-                                        class="w-4 h-4 rounded bg-white/10 border-white/20 text-primary focus:ring-primary"><span
-                                        class="text-sm text-gray-300">Balcony</span></label>
-                            </div>
-                        </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Price (LKR) *</label>
+                        <input type="number" name="price" required min="0" step="1000"
+                            class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-blue-500 outline-none bg-white"
+                            placeholder="e.g., 50000000">
                     </div>
-
-                    <!-- Agent -->
-                    <div class="space-y-4 hidden">
-                        <!-- Hidden Agent Select logic managed by JS -->
-                        <select name="agent" id="dashboardAgentSelect" class="w-full hidden">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Type *</label>
+                        <select name="type" required
+                            class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-blue-500 outline-none bg-white">
+                            <option value="">Select type</option>
+                            <option value="SALE">For Sale</option>
+                            <option value="RENT">For Rent</option>
                         </select>
                     </div>
+                </div>
 
-                    <!-- Photos -->
-                    <div class="space-y-4">
-                        <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                            <span
-                                class="w-6 h-6 rounded bg-primary/20 flex items-center justify-center text-primary text-xs">4</span>
-                            Photos
-                        </h3>
-                        <div id="dashboardDropZone"
-                            class="border-2 border-dashed border-white/10 rounded-xl p-8 text-center hover:border-primary/50 transition-colors cursor-pointer bg-white/5">
-                            <p class="text-gray-400 mb-2">Drag & Drop Photos</p>
-                            <input type="file" id="dashboardPropertyImages" multiple accept="image/*" class="hidden">
-                            <button type="button" onclick="document.getElementById('dashboardPropertyImages').click()"
-                                class="bg-white/10 text-white px-4 py-2 rounded-lg text-sm hover:bg-white/20">Select
-                                Files</button>
-                        </div>
-                        <div id="dashboardImagePreviewContainer" class="grid grid-cols-4 gap-2"></div>
-                    </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Status *</label>
+                    <select name="status" required
+                        class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-blue-500 outline-none bg-white">
+                        <option value="AVAILABLE">Available</option>
+                        <option value="PENDING">Pending</option>
+                        <option value="SOLD">Sold</option>
+                        <option value="RENTED">Rented</option>
+                    </select>
+                </div>
 
-                    <!-- Contact -->
-                    <div class="space-y-4">
-                        <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                            <span
-                                class="w-6 h-6 rounded bg-primary/20 flex items-center justify-center text-primary text-xs">5</span>
-                            Contact
-                        </h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div><label class="block text-sm font-medium text-gray-400 mb-1">Name</label><input
-                                    type="text" id="dashboardContactName" required
-                                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary/50">
-                            </div>
-                            <div><label class="block text-sm font-medium text-gray-400 mb-1">Phone</label><input
-                                    type="tel" id="dashboardContactPhone" required
-                                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary/50">
-                            </div>
-                            <div class="md:col-span-2"><label
-                                    class="block text-sm font-medium text-gray-400 mb-1">Email</label><input
-                                    type="email" id="dashboardContactEmail" required
-                                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary/50">
-                            </div>
-                        </div>
-                    </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Agent Name *</label>
+                    <select name="assignedAgentId" id="agentAssignedAgentId" required
+                        class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-blue-500 outline-none bg-white">
+                    </select>
+                </div>
 
-                    <div class="pt-4 border-t border-white/10">
-                        <button type="submit"
-                            class="w-full py-3 bg-primary text-black font-bold rounded-xl hover:bg-green-400 transition-colors shadow-lg shadow-primary/20">Submit
-                            Listing</button>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea name="description" rows="4" maxlength="1000"
+                        class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all resize-none"
+                        placeholder="Enter property description (max 1000 characters)"></textarea>
+                    <p class="text-xs text-gray-400 mt-1"><span id="agentDescCharCount">0</span>/1000 characters</p>
+                </div>
+
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Bedrooms</label>
+                        <input type="number" name="bedrooms" min="0" max="20"
+                            class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                            placeholder="0">
                     </div>
-                </form>
-            </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Bathrooms</label>
+                        <input type="number" name="bathrooms" min="0" max="10"
+                            class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                            placeholder="0">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Area (Sq.Ft)</label>
+                        <input type="number" name="areaSqFt" min="0" step="0.01"
+                            class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                            placeholder="0">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Main Image URL</label>
+                    <input type="url" name="imageUrl" id="agentImageUrlInput"
+                        class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                        placeholder="https://example.com/image.jpg" oninput="previewAgentPropertyImage(this.value)">
+                    <div id="agentImagePreviewContainer" class="mt-3 hidden">
+                        <img id="agentImagePreview" src="" alt="Property Preview"
+                            class="w-full h-48 object-cover rounded-lg border border-gray-200">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Additional Images (Comma separated
+                        URLs)</label>
+                    <textarea name="additionalImages" rows="2"
+                        class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all resize-none"
+                        placeholder="https://example.com/img1.jpg, https://example.com/img2.jpg"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Facilities</label>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mb-2">
+                        <label
+                            class="flex items-center space-x-2 text-sm text-gray-600 bg-gray-50 p-2 rounded border border-gray-100 cursor-pointer hover:bg-blue-50">
+                            <input type="checkbox" name="facilities[]" value="WiFi"
+                                class="rounded text-blue-600 focus:ring-blue-500">
+                            <span>WiFi</span>
+                        </label>
+                        <label
+                            class="flex items-center space-x-2 text-sm text-gray-600 bg-gray-50 p-2 rounded border border-gray-100 cursor-pointer hover:bg-blue-50">
+                            <input type="checkbox" name="facilities[]" value="Parking"
+                                class="rounded text-blue-600 focus:ring-blue-500">
+                            <span>Parking</span>
+                        </label>
+                        <label
+                            class="flex items-center space-x-2 text-sm text-gray-600 bg-gray-50 p-2 rounded border border-gray-100 cursor-pointer hover:bg-blue-50">
+                            <input type="checkbox" name="facilities[]" value="Air Conditioning"
+                                class="rounded text-blue-600 focus:ring-blue-500">
+                            <span>Air Conditioning</span>
+                        </label>
+                        <label
+                            class="flex items-center space-x-2 text-sm text-gray-600 bg-gray-50 p-2 rounded border border-gray-100 cursor-pointer hover:bg-blue-50">
+                            <input type="checkbox" name="facilities[]" value="Pool"
+                                class="rounded text-blue-600 focus:ring-blue-500">
+                            <span>Pool</span>
+                        </label>
+                        <label
+                            class="flex items-center space-x-2 text-sm text-gray-600 bg-gray-50 p-2 rounded border border-gray-100 cursor-pointer hover:bg-blue-50">
+                            <input type="checkbox" name="facilities[]" value="Gym"
+                                class="rounded text-blue-600 focus:ring-blue-500">
+                            <span>Gym</span>
+                        </label>
+                        <label
+                            class="flex items-center space-x-2 text-sm text-gray-600 bg-gray-50 p-2 rounded border border-gray-100 cursor-pointer hover:bg-blue-50">
+                            <input type="checkbox" name="facilities[]" value="Kitchen"
+                                class="rounded text-blue-600 focus:ring-blue-500">
+                            <span>Kitchen</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">House Rules</label>
+                    <textarea name="houseRules" rows="3"
+                        class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all resize-none"
+                        placeholder="- No smoking inside&#10;- No pets allowed&#10;- Quiet hours after 10 PM"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+                    <button type="button" onclick="closeAddPropertyModal()"
+                        class="px-6 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+                        Cancel
+                    </button>
+                    <button type="submit" id="agentSubmitPropertyBtn"
+                        class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
+                            </path>
+                        </svg>
+                        Create Property
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 

@@ -177,12 +177,12 @@
                         </div>
                     </div>
                     <div class="flex flex-wrap gap-3 w-full md:w-auto">
-                        <button onclick="document.getElementById('contactModal').classList.remove('hidden')"
+                        <button onclick="openContactModal()"
                             class="flex-1 md:flex-none flex items-center justify-center gap-2 bg-slate-200 dark:bg-surface-dark px-8 py-3 rounded-xl font-bold hover:bg-slate-300 dark:hover:bg-surface-dark/50 transition-colors">
                             <span class="material-symbols-outlined text-xl">mail</span>
                             Message
                         </button>
-                        <button onclick="document.getElementById('contactModal').classList.remove('hidden')"
+                        <button onclick="openContactModal()"
                             class="flex-1 md:flex-none flex items-center justify-center gap-2 bg-primary text-background-dark px-8 py-3 rounded-xl font-black shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform">
                             <span class="material-symbols-outlined text-xl">calendar_month</span>
                             Book a Visit
@@ -253,116 +253,215 @@
         </div>
     </main>
 
-    <!-- Modal Overlay -->
+    <!-- Modal Overlay - Enhanced with Stitch Design -->
     <div id="contactModal" class="hidden fixed inset-0 modal-backdrop z-[100] flex items-center justify-center p-4">
         <div
-            class="bg-background-dark border border-white/10 w-full max-w-5xl rounded-xl shadow-2xl overflow-hidden flex flex-col md:flex-row relative">
+            class="bg-background-dark border border-white/10 w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row relative">
             <!-- Close Button -->
-            <button onclick="document.getElementById('contactModal').classList.add('hidden')"
+            <button onclick="closeContactModal()"
                 class="absolute top-4 right-4 text-white/40 hover:text-white transition-colors z-50">
                 <span class="material-symbols-outlined">close</span>
             </button>
-            <!-- Left Column: Quick Contact Form -->
-            <div class="flex-1 p-8 lg:p-12 border-r border-white/5">
-                <header class="mb-8">
+
+            <!-- Left Column: Contact Form with Tab Navigation -->
+            <div class="flex-1 p-8 lg:p-10 border-r border-white/5">
+                <header class="mb-6">
                     <h2
                         class="text-white text-2xl lg:text-3xl font-bold leading-tight tracking-[-0.015em] mb-2 font-display">
                         Get in Touch <span class="text-primary" id="modalAgentName"></span></h2>
-                    <p class="text-white/60 text-sm">Fill out the form below and we will reach out to you shortly.</p>
+                    <p class="text-white/60 text-sm">Fill out the form below and we will reach out to you shortly
+                        regarding your inquiry.</p>
                 </header>
-                <form class="space-y-6"
-                    onsubmit="event.preventDefault(); alert('Inquiry sent!'); document.getElementById('contactModal').classList.add('hidden');">
+
+                <!-- Tab Navigation -->
+                <div class="flex gap-4 mb-6 border-b border-white/10 pb-4">
+                    <button id="tabDirectConnection" onclick="switchTab('direct')"
+                        class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary font-semibold text-sm transition-all">
+                        <span class="material-symbols-outlined text-lg">forum</span>
+                        Direct Connection
+                    </button>
+                    <button id="tabBookVisit" onclick="switchTab('visit')"
+                        class="flex items-center gap-2 px-4 py-2 rounded-lg text-white/50 hover:text-white hover:bg-white/5 font-semibold text-sm transition-all">
+                        <span class="material-symbols-outlined text-lg">calendar_month</span>
+                        Book a Visit
+                    </button>
+                </div>
+
+                <form id="contactForm" class="space-y-5" onsubmit="event.preventDefault(); submitInquiry();">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <label class="flex flex-col gap-2">
                             <span class="text-white text-sm font-medium">Full Name</span>
-                            <input
-                                class="form-input w-full rounded-lg text-white focus:outline-0 focus:ring-1 focus:ring-primary border border-white/10 bg-white/5 focus:border-primary h-12 placeholder:text-white/20 px-4 text-base font-normal"
-                                placeholder="e.g. John Doe" type="text" />
+                            <input id="inquiryName"
+                                class="form-input w-full rounded-lg text-white focus:outline-0 focus:ring-1 focus:ring-primary border border-white/10 bg-white/5 focus:border-primary h-12 placeholder:text-white/30 px-4 text-base font-normal"
+                                placeholder="e.g.  Hemal Pramuditha" type="text" required />
                         </label>
                         <label class="flex flex-col gap-2">
                             <span class="text-white text-sm font-medium">Email Address</span>
-                            <input
-                                class="form-input w-full rounded-lg text-white focus:outline-0 focus:ring-1 focus:ring-primary border border-white/10 bg-white/5 focus:border-primary h-12 placeholder:text-white/20 px-4 text-base font-normal"
-                                placeholder="john@example.com" type="email" />
+                            <input id="inquiryEmail"
+                                class="form-input w-full rounded-lg text-white focus:outline-0 focus:ring-1 focus:ring-primary border border-white/10 bg-white/5 focus:border-primary h-12 placeholder:text-white/30 px-4 text-base font-normal"
+                                placeholder="hemalag@real.com" type="email" required />
+                        </label>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <label class="flex flex-col gap-2">
+                            <span class="text-white text-sm font-medium">Phone Number</span>
+                            <input id="inquiryPhone"
+                                class="form-input w-full rounded-lg text-white focus:outline-0 focus:ring-1 focus:ring-primary border border-white/10 bg-white/5 focus:border-primary h-12 placeholder:text-white/30 px-4 text-base font-normal"
+                                placeholder="+94 77 123 4567" type="tel" />
+                        </label>
+                        <label class="flex flex-col gap-2">
+                            <span class="text-white text-sm font-medium">Subject</span>
+                            <select id="inquirySubject"
+                                class="form-select w-full rounded-lg text-white focus:outline-0 focus:ring-1 focus:ring-primary border border-white/10 bg-white/5 focus:border-primary h-12 px-4 text-base font-normal">
+                                <option class="bg-background-dark" value="Property Inquiry">Property Inquiry</option>
+                                <option class="bg-background-dark" value="Schedule a Viewing">Schedule a Viewing
+                                </option>
+                                <option class="bg-background-dark" value="Selling My Home">Selling My Home</option>
+                                <option class="bg-background-dark" value="Other">Other</option>
+                            </select>
                         </label>
                     </div>
                     <label class="flex flex-col gap-2">
-                        <span class="text-white text-sm font-medium">Subject</span>
-                        <select
-                            class="form-select w-full rounded-lg text-white focus:outline-0 focus:ring-1 focus:ring-primary border border-white/10 bg-white/5 focus:border-primary h-12 px-4 text-base font-normal">
-                            <option class="bg-background-dark">Property Inquiry</option>
-                            <option class="bg-background-dark">Schedule a Viewing</option>
-                            <option class="bg-background-dark">Selling My Home</option>
-                            <option class="bg-background-dark">Other</option>
-                        </select>
-                    </label>
-                    <label class="flex flex-col gap-2">
                         <span class="text-white text-sm font-medium">Message</span>
-                        <textarea
-                            class="form-input w-full rounded-lg text-white focus:outline-0 focus:ring-1 focus:ring-primary border border-white/10 bg-white/5 focus:border-primary min-h-[140px] placeholder:text-white/20 p-4 text-base font-normal"
+                        <textarea id="inquiryMessage"
+                            class="form-input w-full rounded-lg text-white focus:outline-0 focus:ring-1 focus:ring-primary border border-white/10 bg-white/5 focus:border-primary min-h-[120px] placeholder:text-white/30 p-4 text-base font-normal resize-none"
                             placeholder="I'm interested in viewing your listings..."></textarea>
                     </label>
                     <button
-                        class="w-full h-14 bg-primary hover:bg-primary/90 text-[#0f241a] font-bold rounded-lg transition-all flex items-center justify-center gap-2 text-lg shadow-[0_0_20px_rgba(0,255,128,0.2)]"
+                        class="w-full h-14 bg-primary hover:bg-primary/90 text-[#0f241a] font-bold rounded-xl transition-all flex items-center justify-center gap-2 text-lg shadow-[0_0_30px_rgba(0,255,128,0.15)] hover:shadow-[0_0_40px_rgba(0,255,128,0.25)]"
                         type="submit">
                         <span>Send Inquiry</span>
                         <span class="material-symbols-outlined">send</span>
                     </button>
                 </form>
             </div>
-            <!-- Right Column: Engagement Hub -->
-            <div class="w-full md:w-[380px] bg-white/[0.02] p-8 flex flex-col gap-8">
-                <!-- Agent Availability -->
-                <div class="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
+
+            <!-- Right Column: Agent Card + Calendar -->
+            <div class="w-full md:w-[360px] bg-gradient-to-b from-white/[0.03] to-transparent p-6 flex flex-col gap-6">
+                <!-- Agent Availability Card -->
+                <div class="flex items-center gap-4 p-5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm">
                     <div class="relative">
                         <div id="modalAgentImage"
-                            class="size-14 rounded-full bg-cover bg-center border-2 border-primary/20"
+                            class="size-16 rounded-full bg-cover bg-center border-2 border-primary/30 shadow-lg"
                             style="background-image: url('')"></div>
                         <div
-                            class="absolute bottom-0 right-0 size-3 bg-primary rounded-full border-2 border-background-dark status-pulse">
+                            class="absolute bottom-0 right-0 size-4 bg-primary rounded-full border-2 border-background-dark status-pulse shadow-lg shadow-primary/50">
                         </div>
                     </div>
                     <div>
-                        <h4 class="text-white font-bold leading-none" id="modalAgentNameDisplay">Agent Name</h4>
-                        <p class="text-primary text-xs font-semibold mt-1 uppercase tracking-wider">Online Now</p>
-                        <p class="text-white/40 text-[10px] mt-1 italic">Typically responds in 15m</p>
+                        <h4 class="text-white font-bold text-lg leading-tight" id="modalAgentNameDisplay">Agent Name
+                        </h4>
+                        <p
+                            class="text-primary text-xs font-semibold mt-1 uppercase tracking-wider flex items-center gap-1">
+                            <span class="inline-block w-2 h-2 bg-primary rounded-full animate-pulse"></span>
+                            Online Now
+                        </p>
+                        <p class="text-white/40 text-xs mt-1 italic">Typically responds in 15m</p>
                     </div>
                 </div>
-                <!-- Mini Calendar Picker (Static) -->
+
+                <!-- Property Context (shown when booking from a listing) -->
+                <div id="propertyContextCard" class="hidden p-4 rounded-xl bg-primary/5 border border-primary/20">
+                    <p class="text-xs text-primary font-semibold uppercase tracking-wider mb-2">Inquiry About</p>
+                    <p id="propertyContextTitle" class="text-white font-bold truncate">Property Title</p>
+                    <p id="propertyContextAddress" class="text-white/50 text-sm truncate">Property Address</p>
+                </div>
+
+                <!-- Mini Calendar Picker -->
                 <div class="space-y-4 flex-1">
-                    <h3 class="text-white font-bold flex items-center gap-2">
+                    <h3 class="text-white font-bold flex items-center gap-2 text-sm">
                         <span class="material-symbols-outlined text-primary text-xl">calendar_month</span>
-                        Book a Visit
+                        Select a Date to Visit
                     </h3>
-                    <div class="bg-white/5 rounded-lg border border-white/5 p-4">
+                    <div class="bg-white/5 rounded-xl border border-white/5 p-4">
                         <div class="flex justify-between items-center mb-4">
-                            <span class="text-white text-xs font-semibold">February 2026</span>
+                            <button class="text-white/50 hover:text-white p-1 rounded transition-colors">
+                                <span class="material-symbols-outlined text-sm">chevron_left</span>
+                            </button>
+                            <span class="text-white text-sm font-bold">February 2026</span>
+                            <button class="text-white/50 hover:text-white p-1 rounded transition-colors">
+                                <span class="material-symbols-outlined text-sm">chevron_right</span>
+                            </button>
                         </div>
-                        <div class="grid grid-cols-7 gap-1 text-center mb-1">
-                            <div class="text-[10px] font-bold text-white/30">M</div>
-                            <div class="text-[10px] font-bold text-white/30">T</div>
-                            <div class="text-[10px] font-bold text-white/30">W</div>
-                            <div class="text-[10px] font-bold text-white/30">T</div>
-                            <div class="text-[10px] font-bold text-white/30">F</div>
-                            <div class="text-[10px] font-bold text-white/30">S</div>
-                            <div class="text-[10px] font-bold text-white/30">S</div>
+                        <div class="grid grid-cols-7 gap-1 text-center mb-2">
+                            <div class="text-[10px] font-bold text-white/30 py-1">M</div>
+                            <div class="text-[10px] font-bold text-white/30 py-1">T</div>
+                            <div class="text-[10px] font-bold text-white/30 py-1">W</div>
+                            <div class="text-[10px] font-bold text-white/30 py-1">T</div>
+                            <div class="text-[10px] font-bold text-white/30 py-1">F</div>
+                            <div class="text-[10px] font-bold text-white/30 py-1">S</div>
+                            <div class="text-[10px] font-bold text-white/30 py-1">S</div>
                         </div>
-                        <div class="grid grid-cols-7 gap-1 text-xs text-white">
-                            <!-- Simple static grid for visual -->
-                            <div class="text-white/20 p-1">26</div>
-                            <div class="text-white/20 p-1">27</div>
-                            <div class="text-white/20 p-1">28</div>
-                            <div class="text-white/20 p-1">29</div>
-                            <div class="text-white/20 p-1">30</div>
-                            <div class="p-1 hover:bg-white/10 rounded cursor-pointer">1</div>
-                            <div class="p-1 hover:bg-white/10 rounded cursor-pointer">2</div>
-                            <div class="p-1 hover:bg-white/10 rounded cursor-pointer">3</div>
-                            <div class="bg-primary text-black rounded font-bold p-1 cursor-pointer">4</div>
-                            <div class="p-1 hover:bg-white/10 rounded cursor-pointer">5</div>
-                            <div class="p-1 hover:bg-white/10 rounded cursor-pointer">6</div>
-                            <div class="p-1 hover:bg-white/10 rounded cursor-pointer">7</div>
-                            <div class="p-1 hover:bg-white/10 rounded cursor-pointer">8</div>
-                            <div class="p-1 hover:bg-white/10 rounded cursor-pointer">9</div>
+                        <div class="grid grid-cols-7 gap-1 text-xs text-white" id="calendarGrid">
+                            <div class="text-white/20 p-2 text-center">27</div>
+                            <div class="text-white/20 p-2 text-center">28</div>
+                            <div class="text-white/20 p-2 text-center">29</div>
+                            <div class="text-white/20 p-2 text-center">30</div>
+                            <div class="text-white/20 p-2 text-center">31</div>
+                            <div
+                                class="p-2 text-center hover:bg-primary/20 rounded-lg cursor-pointer transition-colors">
+                                1</div>
+                            <div
+                                class="p-2 text-center hover:bg-primary/20 rounded-lg cursor-pointer transition-colors">
+                                2</div>
+                            <div
+                                class="p-2 text-center hover:bg-primary/20 rounded-lg cursor-pointer transition-colors">
+                                3</div>
+                            <div
+                                class="p-2 text-center hover:bg-primary/20 rounded-lg cursor-pointer transition-colors">
+                                4</div>
+                            <div
+                                class="p-2 text-center hover:bg-primary/20 rounded-lg cursor-pointer transition-colors">
+                                5</div>
+                            <div
+                                class="p-2 text-center bg-primary text-black rounded-lg font-bold cursor-pointer shadow-lg shadow-primary/30">
+                                6</div>
+                            <div
+                                class="p-2 text-center hover:bg-primary/20 rounded-lg cursor-pointer transition-colors">
+                                7</div>
+                            <div
+                                class="p-2 text-center hover:bg-primary/20 rounded-lg cursor-pointer transition-colors">
+                                8</div>
+                            <div
+                                class="p-2 text-center hover:bg-primary/20 rounded-lg cursor-pointer transition-colors">
+                                9</div>
+                            <div
+                                class="p-2 text-center hover:bg-primary/20 rounded-lg cursor-pointer transition-colors">
+                                10</div>
+                            <div
+                                class="p-2 text-center hover:bg-primary/20 rounded-lg cursor-pointer transition-colors">
+                                11</div>
+                            <div
+                                class="p-2 text-center hover:bg-primary/20 rounded-lg cursor-pointer transition-colors">
+                                12</div>
+                            <div
+                                class="p-2 text-center hover:bg-primary/20 rounded-lg cursor-pointer transition-colors">
+                                13</div>
+                            <div
+                                class="p-2 text-center hover:bg-primary/20 rounded-lg cursor-pointer transition-colors">
+                                14</div>
+                            <div
+                                class="p-2 text-center hover:bg-primary/20 rounded-lg cursor-pointer transition-colors">
+                                15</div>
+                        </div>
+                    </div>
+
+                    <!-- Time Slots -->
+                    <div class="space-y-2">
+                        <p class="text-white/50 text-xs font-medium">Available Time Slots</p>
+                        <div class="flex flex-wrap gap-2">
+                            <button
+                                class="px-3 py-1.5 text-xs rounded-lg bg-white/5 border border-white/10 text-white hover:border-primary hover:text-primary transition-colors">9:00
+                                AM</button>
+                            <button
+                                class="px-3 py-1.5 text-xs rounded-lg bg-primary/10 border border-primary text-primary font-semibold">10:30
+                                AM</button>
+                            <button
+                                class="px-3 py-1.5 text-xs rounded-lg bg-white/5 border border-white/10 text-white hover:border-primary hover:text-primary transition-colors">2:00
+                                PM</button>
+                            <button
+                                class="px-3 py-1.5 text-xs rounded-lg bg-white/5 border border-white/10 text-white hover:border-primary hover:text-primary transition-colors">4:30
+                                PM</button>
                         </div>
                     </div>
                 </div>
@@ -375,6 +474,75 @@
     <script type="module" src="/src/main.js"></script>
     <script>
         const API_BASE = 'http://localhost:8080';
+        let currentAgent = null;
+
+        // Modal Functions
+        function openContactModal(propertyContext = null) {
+            const modal = document.getElementById('contactModal');
+            const propertyCard = document.getElementById('propertyContextCard');
+
+            if (propertyContext) {
+                // Show property context
+                document.getElementById('propertyContextTitle').textContent = propertyContext.title;
+                document.getElementById('propertyContextAddress').textContent = propertyContext.address || 'N/A';
+                document.getElementById('inquiryMessage').value = `I'm interested in viewing "${propertyContext.title}". Please contact me to schedule a visit.`;
+                document.getElementById('inquirySubject').value = 'Schedule a Viewing';
+                propertyCard.classList.remove('hidden');
+            } else {
+                propertyCard.classList.add('hidden');
+                document.getElementById('inquiryMessage').value = '';
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeContactModal() {
+            document.getElementById('contactModal').classList.add('hidden');
+            document.getElementById('propertyContextCard').classList.add('hidden');
+        }
+
+        function switchTab(tab) {
+            const directTab = document.getElementById('tabDirectConnection');
+            const visitTab = document.getElementById('tabBookVisit');
+
+            if (tab === 'direct') {
+                directTab.className = 'flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary font-semibold text-sm transition-all';
+                visitTab.className = 'flex items-center gap-2 px-4 py-2 rounded-lg text-white/50 hover:text-white hover:bg-white/5 font-semibold text-sm transition-all';
+            } else {
+                visitTab.className = 'flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary font-semibold text-sm transition-all';
+                directTab.className = 'flex items-center gap-2 px-4 py-2 rounded-lg text-white/50 hover:text-white hover:bg-white/5 font-semibold text-sm transition-all';
+                document.getElementById('inquirySubject').value = 'Schedule a Viewing';
+            }
+        }
+
+        function submitInquiry() {
+            const name = document.getElementById('inquiryName').value;
+            const email = document.getElementById('inquiryEmail').value;
+
+            if (!name || !email) {
+                alert('Please fill in your name and email.');
+                return;
+            }
+
+            // Show success message
+            alert(`Thank you, ${name}! Your inquiry has been sent to ${currentAgent?.name || 'the agent'}. They will contact you shortly.`);
+            closeContactModal();
+
+            // Reset form
+            document.getElementById('contactForm').reset();
+        }
+
+        // Helper function for property-specific modal
+        function openContactModalForProperty(propertyId, propertyTitle, propertyAddress) {
+            openContactModal({ id: propertyId, title: propertyTitle, address: propertyAddress });
+        }
+
+        // Expose functions globally
+        window.openContactModal = openContactModal;
+        window.closeContactModal = closeContactModal;
+        window.switchTab = switchTab;
+        window.submitInquiry = submitInquiry;
+        window.openContactModalForProperty = openContactModalForProperty;
 
         async function loadAgentDetails() {
             const params = new URLSearchParams(window.location.search);
@@ -393,6 +561,8 @@
                 const agent = agents.find(a => a.id == agentId);
 
                 if (!agent) throw new Error('Agent not found');
+
+                currentAgent = agent;
 
                 // Populate Data
                 document.getElementById('agentName').textContent = agent.name;
@@ -441,7 +611,7 @@
                 const managedProperties = properties.filter(p => p.assignedAgent && p.assignedAgent.id == agentId);
 
                 if (managedProperties.length === 0) {
-                    listingsContainer.innerHTML = `<div class="text-slate-500 text-center py-8 bg-surface-dark rounded-xl border border-white/5">No active listings at the moment.</div>`;
+                    listingsContainer.innerHTML = `<div class="col-span-full text-slate-500 text-center py-8 bg-surface-dark rounded-xl border border-white/5">No active listings at the moment.</div>`;
                     return;
                 }
 
@@ -450,42 +620,49 @@
                     const bedrooms = property.bedrooms || 0;
                     const bathrooms = property.bathrooms || 0;
                     return `
-                    <a href="/view-property.html?id=${property.id}" class="block group">
-                        <div class="bg-surface-dark border border-white/5 rounded-2xl overflow-hidden hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300">
-                            <div class="h-48 md:h-52 bg-cover bg-center relative" style="background-image: url('${imgUrl}')">
+                    <div class="bg-surface-dark border border-white/5 rounded-2xl overflow-hidden hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 group">
+                        <a href="/view-property.html?id=${property.id}" class="block">
+                            <div class="h-48 md:h-44 bg-cover bg-center relative" style="background-image: url('${imgUrl}')">
                                 <div class="absolute top-3 left-3">
                                     <span class="px-3 py-1 bg-primary/90 text-white text-xs font-bold rounded-full uppercase tracking-wide">
                                         ${property.status === 'AVAILABLE' ? 'Active' : property.status}
                                     </span>
                                 </div>
                             </div>
-                            <div class="p-5">
-                                <h4 class="font-bold text-white text-lg truncate group-hover:text-primary transition-colors">${property.title}</h4>
-                                <p class="text-primary font-bold text-xl mt-2">LKR ${property.price?.toLocaleString() || 'N/A'}</p>
-                                <p class="text-slate-400 text-sm truncate mt-1 flex items-center gap-1">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="p-4">
+                                <h4 class="font-bold text-white text-base truncate group-hover:text-primary transition-colors">${property.title}</h4>
+                                <p class="text-primary font-bold text-lg mt-1">LKR ${property.price?.toLocaleString() || 'N/A'}</p>
+                                <p class="text-slate-400 text-xs truncate mt-1 flex items-center gap-1">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                                     </svg>
                                     ${property.address || 'N/A'}
                                 </p>
-                                <div class="flex items-center gap-4 mt-3 pt-3 border-t border-white/10">
-                                    <span class="flex items-center gap-1.5 text-slate-400 text-sm">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="flex items-center gap-3 mt-2 text-slate-500 text-xs">
+                                    <span class="flex items-center gap-1">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
                                         </svg>
                                         ${bedrooms} Bed
                                     </span>
-                                    <span class="flex items-center gap-1.5 text-slate-400 text-sm">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <span class="flex items-center gap-1">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"/>
                                         </svg>
                                         ${bathrooms} Bath
                                     </span>
                                 </div>
                             </div>
+                        </a>
+                        <div class="px-4 pb-4">
+                            <button onclick="event.stopPropagation(); openContactModalForProperty(${property.id}, '${property.title.replace(/'/g, "\\'")}', '${(property.address || 'N/A').replace(/'/g, "\\'")}')" 
+                                class="w-full flex items-center justify-center gap-2 bg-primary/10 hover:bg-primary text-primary hover:text-background-dark py-2.5 rounded-lg text-sm font-bold transition-all border border-primary/30 hover:border-primary">
+                                <span class="material-symbols-outlined text-lg">calendar_month</span>
+                                Book a Visit
+                            </button>
                         </div>
-                    </a>
+                    </div>
                     `;
                 }).join('');
 

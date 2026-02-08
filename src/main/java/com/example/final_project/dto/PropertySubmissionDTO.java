@@ -21,6 +21,7 @@ public class PropertySubmissionDTO {
     private String ownerName;
     private String ownerPhone;
     private String ownerEmail;
+    private String driveLink;
 
     // Selected agent
     private String agentName;

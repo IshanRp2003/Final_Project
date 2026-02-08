@@ -346,6 +346,271 @@
             </div>
         </div>
     </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script>
+        const API_URL = 'http://localhost:8080/api';
+        const WS_URL = 'http://localhost:8080/ws';
+        let inquiryId = null;
+        let messages = [];
+        let currentUser = null;
+        let stompClient = null;
+
+        // Auth check
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.href);
+        }
+
+        // Get user info
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            currentUser = JSON.parse(userStr);
+        }
+
+        // Get inquiry ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        inquiryId = urlParams.get('id');
+
+        if (!inquiryId) {
+            alert('No inquiry ID provided');
+            window.location.href = '/user-inquiries.html';
+        }
+
+        // Format time
+        function formatTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        }
+
+        // Format date for divider
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const today = new Date();
+            if (date.toDateString() === today.toDateString()) {
+                return `Today, ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+            }
+            return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        }
+
+        // Render message
+        function renderMessage(msg) {
+            const isUser = msg.senderRole === 'USER' || msg.senderId === currentUser?.id;
+            const senderName = msg.senderName || (isUser ? 'You' : 'Agent');
+
+            if (isUser) {
+                return `
+                    <div class="flex items-end gap-3 justify-end self-end max-w-[85%]">
+                        <div class="flex flex-col gap-1 items-end">
+                            <div class="flex items-center gap-2 mr-1">
+                                <span class="text-[#566860] text-[10px]">${formatTime(msg.createdAt)}</span>
+                                <span class="text-[#9bbbab] text-xs">You</span>
+                            </div>
+                            <div class="relative px-5 py-4 bg-[#1a1a1a] border border-primary/50 rounded-2xl rounded-br-none text-primary shadow-[0_0_10px_rgba(6,249,128,0.05)] text-sm leading-relaxed">
+                                ${msg.text}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="flex items-end gap-3 justify-start max-w-[85%]">
+                        <div class="bg-primary/20 rounded-full h-8 w-8 flex-shrink-0 border border-[#273a30] flex items-center justify-center text-primary font-bold text-sm">
+                            ${senderName.charAt(0).toUpperCase()}
+                        </div>
+                        <div class="flex flex-col gap-1 items-start">
+                            <div class="flex items-center gap-2 ml-1">
+                                <span class="text-[#9bbbab] text-xs">${senderName}</span>
+                                <span class="text-[#566860] text-[10px]">${formatTime(msg.createdAt)}</span>
+                            </div>
+                            <div class="relative px-5 py-4 bg-black border border-[#273a30] rounded-2xl rounded-bl-none text-white text-sm leading-relaxed shadow-sm">
+                                ${msg.text}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Render all messages
+        function renderMessages() {
+            const container = document.querySelector('.flex-1.overflow-y-auto.p-6');
+
+            if (messages.length === 0) {
+                container.innerHTML = `
+                    <div class="flex justify-center items-center h-full">
+                        <p class="text-gray-500">No messages yet. Start the conversation!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            let lastDate = '';
+
+            messages.forEach(msg => {
+                const msgDate = new Date(msg.createdAt).toDateString();
+                if (msgDate !== lastDate) {
+                    html += `
+                        <div class="flex justify-center my-2">
+                            <span class="text-[#566860] text-xs font-medium px-3 py-1 bg-[#111814] rounded-full border border-[#273a30]">${formatDate(msg.createdAt)}</span>
+                        </div>
+                    `;
+                    lastDate = msgDate;
+                }
+                html += renderMessage(msg);
+            });
+
+            container.innerHTML = html;
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Load messages
+        async function loadMessages() {
+            const container = document.querySelector('.flex-1.overflow-y-auto.p-6');
+            container.innerHTML = `
+                <div class="flex justify-center items-center h-full">
+                    <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
+                </div>
+            `;
+
+            try {
+                const response = await fetch(`${API_URL}/inquiries/${inquiryId}/messages`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to load messages');
+
+                messages = await response.json();
+                renderMessages();
+
+            } catch (error) {
+                console.error('Error loading messages:', error);
+                container.innerHTML = `
+                    <div class="flex justify-center items-center h-full flex-col">
+                        <span class="material-symbols-outlined text-5xl text-gray-600 mb-4">error</span>
+                        <p class="text-gray-400">Failed to load messages</p>
+                        <button onclick="loadMessages()" class="mt-4 text-primary hover:underline">Try again</button>
+                    </div>
+                `;
+            }
+        }
+
+        // Send message
+        async function sendMessage() {
+            const textarea = document.querySelector('textarea');
+            const text = textarea.value.trim();
+
+            if (!text) return;
+
+            // Optimistically add message to UI
+            const tempMsg = {
+                id: Date.now(),
+                text: text,
+                senderRole: 'USER',
+                senderId: currentUser?.id,
+                senderName: currentUser?.name || 'You',
+                createdAt: new Date().toISOString()
+            };
+            messages.push(tempMsg);
+            renderMessages();
+            textarea.value = '';
+
+            try {
+                const response = await fetch(`${API_URL}/inquiries/${inquiryId}/messages`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ text: text })
+                });
+
+                if (!response.ok) throw new Error('Failed to send message');
+
+                const newMsg = await response.json();
+                // Replace temp message with real one
+                const idx = messages.findIndex(m => m.id === tempMsg.id);
+                if (idx >= 0) messages[idx] = newMsg;
+                renderMessages();
+
+            } catch (error) {
+                console.error('Error sending message:', error);
+                // Remove optimistic message on error
+                messages = messages.filter(m => m.id !== tempMsg.id);
+                renderMessages();
+                alert('Failed to send message. Please try again.');
+            }
+        }
+
+        // Connect to WebSocket for real-time updates
+        function connectWebSocket() {
+            try {
+                const socket = new SockJS(WS_URL);
+                stompClient = Stomp.over(socket);
+                stompClient.debug = null; // Disable debug logs
+
+                stompClient.connect({}, function (frame) {
+                    console.log('WebSocket connected');
+
+                    // Subscribe to user's inquiry updates
+                    if (currentUser) {
+                        stompClient.subscribe(`/topic/users/${currentUser.id}/inquiries/${inquiryId}`, function (message) {
+                            const newMessage = JSON.parse(message.body);
+                            // Check if message already exists
+                            if (!messages.find(m => m.id === newMessage.id)) {
+                                messages.push(newMessage);
+                                renderMessages();
+                            }
+                        });
+                    }
+                }, function (error) {
+                    console.error('WebSocket error:', error);
+                    // Retry connection after 5 seconds
+                    setTimeout(connectWebSocket, 5000);
+                });
+            } catch (error) {
+                console.error('WebSocket connection failed:', error);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadMessages();
+            connectWebSocket();
+
+            // Send on Enter key
+            const textarea = document.querySelector('textarea');
+            textarea.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            // Send button click
+            const sendBtn = document.querySelector('button:has(.material-symbols-outlined[data-icon="send"])');
+            if (sendBtn) {
+                sendBtn.addEventListener('click', sendMessage);
+            }
+
+            // Quick reply buttons
+            document.querySelectorAll('.flex.gap-2.overflow-x-auto button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const textarea = document.querySelector('textarea');
+                    textarea.value = btn.textContent.trim();
+                    textarea.focus();
+                });
+            });
+        });
+
+        // Cleanup on page leave
+        window.addEventListener('beforeunload', () => {
+            if (stompClient) {
+                stompClient.disconnect();
+            }
+        });
+    </script>
 </body>
 
 </html>

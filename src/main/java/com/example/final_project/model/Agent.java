@@ -56,6 +56,11 @@ public class Agent {
     @Builder.Default
     private AgentStatus status = AgentStatus.ACTIVE;
 
+    // Link to the User account for this agent (for login/authentication)
+    @ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)
+    @JoinColumn(name = "linked_user_id")
+    private User linkedUser;
+
     private LocalDateTime createdAt;
 
     @PrePersist

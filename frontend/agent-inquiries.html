@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Agent Inquiries - Real Estate</title>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#11d661",
+                        "background-dark": "#050505",
+                        "card-dark": "#111111",
+                        "border-dark": "#222222",
+                        "text-secondary": "#9ca3af",
+                    },
+                    fontFamily: {
+                        "sans": ["Manrope", "sans-serif"],
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Manrope', sans-serif;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #000;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #444;
+        }
+    </style>
+</head>
+
+<body class="bg-black text-white overflow-hidden h-screen flex">
+    <!-- Sidebar -->
+    <aside class="w-64 flex flex-col h-full bg-[#050505] border-r border-border-dark flex-shrink-0">
+        <div class="p-6">
+            <div class="flex items-center gap-3">
+                <div
+                    class="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-green-800 flex items-center justify-center text-black font-bold">
+                    RE</div>
+                <div class="flex flex-col">
+                    <h1 class="text-white text-base font-bold leading-normal">Real Estate</h1>
+                    <p class="text-gray-400 text-xs font-normal">Agent Portal</p>
+                </div>
+            </div>
+        </div>
+
+        <nav class="flex flex-col gap-2 px-4 mt-4 overflow-y-auto flex-1">
+            <a href="/agent-dashboard.html"
+                class="flex items-center gap-3 px-3 py-3 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-colors">
+                <span class="material-symbols-outlined">dashboard</span>
+                <span class="text-sm font-medium">Overview</span>
+            </a>
+            <a href="#"
+                class="nav-item flex items-center gap-3 px-3 py-3 rounded-lg bg-primary/20 text-primary border-l-4 border-primary">
+                <span class="material-symbols-outlined">mail</span>
+                <span class="text-sm font-medium">Inquiries</span>
+                <span id="inquiryBadge"
+                    class="ml-auto bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full hidden">0</span>
+            </a>
+            <a href="/inquiry-chat.html"
+                class="flex items-center gap-3 px-3 py-3 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-colors">
+                <span class="material-symbols-outlined">chat_bubble</span>
+                <span class="text-sm font-medium">Messages</span>
+            </a>
+        </nav>
+
+        <!-- User Profile -->
+        <div class="p-4 border-t border-border-dark">
+            <div class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 cursor-pointer transition-colors">
+                <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold"
+                    id="sidebar-avatar">A</div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-white truncate" id="sidebar-name">Agent</p>
+                    <p class="text-xs text-gray-500 truncate">Agent Portal</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-full overflow-y-auto bg-black">
+        <div class="flex flex-col max-w-[1400px] w-full mx-auto p-6 md:p-10 gap-6">
+            <!-- Header -->
+            <header class="flex flex-col md:flex-row justify-between md:items-center gap-4">
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold text-white">My Inquiries</h1>
+                    <p class="text-gray-400 mt-1">Manage property inquiries assigned to you</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="filterInquiries('ALL')"
+                        class="filter-btn active px-4 py-2 text-sm rounded-lg transition-colors"
+                        data-status="ALL">All</button>
+                    <button onclick="filterInquiries('PENDING')"
+                        class="filter-btn px-4 py-2 text-sm rounded-lg transition-colors"
+                        data-status="PENDING">Pending</button>
+                    <button onclick="filterInquiries('REPLIED')"
+                        class="filter-btn px-4 py-2 text-sm rounded-lg transition-colors"
+                        data-status="REPLIED">Replied</button>
+                    <button onclick="filterInquiries('CLOSED')"
+                        class="filter-btn px-4 py-2 text-sm rounded-lg transition-colors"
+                        data-status="CLOSED">Closed</button>
+                </div>
+            </header>
+
+            <!-- Inquiries Table -->
+            <div class="bg-card-dark border border-border-dark rounded-xl p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-white">Property Inquiries</h3>
+                    <span id="inquiryCount" class="text-sm text-gray-400">0 inquiries</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-gray-400">
+                        <thead class="bg-white/5 text-gray-200 uppercase text-xs">
+                            <tr>
+                                <th class="px-4 py-3 rounded-l-lg">Property</th>
+                                <th class="px-4 py-3">From</th>
+                                <th class="px-4 py-3">Message</th>
+                                <th class="px-4 py-3">Date</th>
+                                <th class="px-4 py-3">Status</th>
+                                <th class="px-4 py-3 rounded-r-lg">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inquiriesTableBody" class="divide-y divide-border-dark">
+                            <tr id="loadingRow">
+                                <td colspan="6" class="px-4 py-12 text-center">
+                                    <div class="flex flex-col items-center justify-center">
+                                        <div
+                                            class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mb-3">
+                                        </div>
+                                        <span class="text-gray-400">Loading inquiries...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script>
+        const API_URL = 'http://localhost:8080/api';
+        let allInquiries = [];
+        let currentFilter = 'ALL';
+        let currentUser = null;
+
+        // Auth check
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.href);
+        }
+
+        // Get user info
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            currentUser = JSON.parse(userStr);
+            document.getElementById('sidebar-name').textContent = currentUser.name || 'Agent';
+            document.getElementById('sidebar-avatar').textContent = (currentUser.name || 'A').charAt(0).toUpperCase();
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffHours = Math.floor((now - date) / (1000 * 60 * 60));
+            if (diffHours < 1) return 'Just now';
+            if (diffHours < 24) return `${diffHours}h ago`;
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        // Get status badge
+        function getStatusBadge(status) {
+            switch (status) {
+                case 'PENDING':
+                    return '<span class="bg-yellow-500/10 text-yellow-500 px-2 py-1 rounded text-xs font-bold">Pending</span>';
+                case 'REPLIED':
+                    return '<span class="bg-primary/10 text-primary px-2 py-1 rounded text-xs font-bold">Replied</span>';
+                case 'CLOSED':
+                    return '<span class="bg-gray-500/10 text-gray-400 px-2 py-1 rounded text-xs font-bold">Closed</span>';
+                default:
+                    return '<span class="bg-gray-500/10 text-gray-400 px-2 py-1 rounded text-xs font-bold">' + status + '</span>';
+            }
+        }
+
+        // Render inquiry row
+        function renderInquiryRow(inquiry) {
+            const propertyTitle = inquiry.propertyTitle || 'Unknown Property';
+            const userName = inquiry.userName || 'Unknown User';
+            const message = inquiry.initialMessage || inquiry.lastMessageText || '';
+            const truncatedMessage = message.length > 50 ? message.substring(0, 50) + '...' : message;
+
+            return `
+                <tr class="hover:bg-white/5 transition-colors">
+                    <td class="px-4 py-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-gray-400">home</span>
+                            </div>
+                            <span class="text-white font-medium">${propertyTitle}</span>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="flex items-center gap-2">
+                            <div class="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-bold">
+                                ${userName.charAt(0).toUpperCase()}
+                            </div>
+                            ${userName}
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 max-w-xs">
+                        <p class="truncate text-gray-300">${truncatedMessage}</p>
+                    </td>
+                    <td class="px-4 py-3">${formatDate(inquiry.createdAt)}</td>
+                    <td class="px-4 py-3">${getStatusBadge(inquiry.status)}</td>
+                    <td class="px-4 py-3">
+                        <div class="flex gap-2">
+                            <button onclick="openChat(${inquiry.id})" class="text-primary hover:text-white transition-colors flex items-center gap-1">
+                                <span class="material-symbols-outlined text-sm">chat</span>
+                                Reply
+                            </button>
+                            ${inquiry.status !== 'CLOSED' ? `
+                            <button onclick="closeInquiry(${inquiry.id})" class="text-gray-400 hover:text-red-400 transition-colors flex items-center gap-1">
+                                <span class="material-symbols-outlined text-sm">close</span>
+                                Close
+                            </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+
+        // Render inquiries
+        function renderInquiries() {
+            const tbody = document.getElementById('inquiriesTableBody');
+            let filtered = allInquiries;
+
+            if (currentFilter !== 'ALL') {
+                filtered = allInquiries.filter(inq => inq.status === currentFilter);
+            }
+
+            document.getElementById('inquiryCount').textContent = `${filtered.length} inquiries`;
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-4 py-12 text-center text-gray-400">
+                            <span class="material-symbols-outlined text-4xl mb-2 block">inbox</span>
+                            No inquiries found
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(renderInquiryRow).join('');
+        }
+
+        // Filter inquiries
+        function filterInquiries(status) {
+            currentFilter = status;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-primary', 'text-black');
+                btn.classList.add('bg-white/5', 'text-gray-400');
+            });
+            const activeBtn = document.querySelector(`.filter-btn[data-status="${status}"]`);
+            activeBtn.classList.add('active', 'bg-primary', 'text-black');
+            activeBtn.classList.remove('bg-white/5', 'text-gray-400');
+            renderInquiries();
+        }
+
+        // Load inquiries
+        async function loadInquiries() {
+            try {
+                const response = await fetch(`${API_URL}/agent/inquiries`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to load inquiries');
+
+                allInquiries = await response.json();
+
+                // Update badge
+                const pendingCount = allInquiries.filter(i => i.status === 'PENDING').length;
+                const badge = document.getElementById('inquiryBadge');
+                if (pendingCount > 0) {
+                    badge.textContent = pendingCount;
+                    badge.classList.remove('hidden');
+                }
+
+                renderInquiries();
+            } catch (error) {
+                console.error('Error loading inquiries:', error);
+                document.getElementById('inquiriesTableBody').innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-4 py-12 text-center text-red-400">
+                            <span class="material-symbols-outlined text-4xl mb-2 block">error</span>
+                            Failed to load inquiries
+                            <button onclick="loadInquiries()" class="block mx-auto mt-2 text-primary hover:underline">Try again</button>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        // Open chat
+        function openChat(inquiryId) {
+            window.location.href = `/inquiry-chat.html?id=${inquiryId}`;
+        }
+
+        // Close inquiry
+        async function closeInquiry(inquiryId) {
+            if (!confirm('Are you sure you want to close this inquiry?')) return;
+
+            try {
+                const response = await fetch(`${API_URL}/agent/inquiries/${inquiryId}/close`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to close inquiry');
+
+                loadInquiries();
+            } catch (error) {
+                console.error('Error closing inquiry:', error);
+                alert('Failed to close inquiry');
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            filterInquiries('ALL');
+            loadInquiries();
+        });
+    </script>
+</body>
+
+</html>

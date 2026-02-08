@@ -134,7 +134,7 @@
                         </svg>
                         Appointments
                     </a>
-                    <a href="#"
+                    <a href="/admin-inquiries.html"
                         class="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-blue-600 rounded-lg transition-colors">
                         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -350,6 +350,22 @@
                                     </path>
                                 </svg>
                             </div>
+                        </div>
+                    </div>
+
+                    <div id="pendingListingsView" class="hidden">
+                        <div class="flex items-center justify-between mb-8">
+                            <div>
+                                <h1 class="text-3xl font-bold text-gray-800">Pending Approvals</h1>
+                                <p class="text-gray-500 mt-2">Review and approve new property submissions.</p>
+                            </div>
+                            <button onclick="loadPendingListings()" class="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600">
+                                <span class="material-symbols-outlined text-[20px]">refresh</span>
+                            </button>
+                        </div>
+
+                        <div id="pending-listings-container" class="grid grid-cols-1 gap-6">
+                            <div class="text-center py-12 text-gray-500">Loading pending listings...</div>
                         </div>
                     </div>
 
@@ -1489,6 +1505,15 @@
                         </div>
                     </div>
 
+                    <!-- Drive Resource -->
+                    <div id="viewPropertyDriveSection" class="hidden bg-blue-50 border border-blue-100 rounded-xl p-4">
+                        <h3 class="text-sm font-semibold text-blue-600 uppercase tracking-wider mb-2">Drive Resource</h3>
+                        <a id="viewPropertyDriveLink" href="#" target="_blank" rel="noopener noreferrer"
+                            class="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+                            Open Drive
+                        </a>
+                    </div>
+
                     <!-- Submission Info -->
                     <div class="text-center text-sm text-gray-500">
                         <span>Submitted on </span>
@@ -2130,7 +2155,7 @@
         // ==================== PENDING LISTINGS ====================
         async function loadPendingCount() {
             try {
-                const response = await fetch(`${API_BASE}/api/admin/pending`, {
+                const response = await fetch(`${API_BASE}/api/admin/listings/pending`, {
                     headers: getAuthHeaders()
                 });
                 if (!response.ok) return;
@@ -2146,7 +2171,7 @@
             const emptyState = document.getElementById('emptyPendingState');
 
             try {
-                const response = await fetch(`${API_BASE}/api/admin/pending`, {
+                const response = await fetch(`${API_BASE}/api/admin/listings/pending`, {
                     headers: getAuthHeaders()
                 });
                 if (!response.ok) throw new Error('Failed to fetch pending listings');
@@ -2188,6 +2213,11 @@
                                 <p class="font-medium text-gray-800">${listing.ownerName || 'Unknown'}</p>
                                 <p class="text-xs text-gray-500">${listing.ownerPhone || ''}</p>
                                 <p class="text-xs text-gray-500">${listing.ownerEmail || ''}</p>
+                                <p class="text-xs mt-1">
+                                    ${listing.driveLink
+                        ? `<a href="${listing.driveLink}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 hover:underline">Open Drive</a>`
+                        : '<span class="text-gray-400">Resource: N/A</span>'}
+                                </p>
                             </div>
                         </td>
                         <td class="px-6 py-4">
@@ -2236,11 +2266,17 @@
 
         async function approveListing(id) {
             if (!confirm('Are you sure you want to approve this listing?')) return;
+            const message = prompt('Approval message to user:', 'Your listing has been approved.');
+            if (!message || message.trim() === '') {
+                alert('Approval message is required.');
+                return;
+            }
 
             try {
                 const response = await fetch(`${API_BASE}/api/admin/listings/${id}/approve`, {
                     method: 'PUT',
-                    headers: getAuthHeaders()
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ message: message.trim() })
                 });
 
                 if (!response.ok) throw new Error('Failed to approve listing');
@@ -2267,7 +2303,7 @@
                 const response = await fetch(`${API_BASE}/api/admin/listings/${id}/reject`, {
                     method: 'PUT',
                     headers: getAuthHeaders(),
-                    body: JSON.stringify({ reason: reason.trim() })
+                    body: JSON.stringify({ message: reason.trim() })
                 });
 
                 if (!response.ok) throw new Error('Failed to reject listing');
@@ -3563,6 +3599,17 @@
             emailEl.textContent = property.ownerEmail || 'N/A';
             emailEl.href = property.ownerEmail ? `mailto:${property.ownerEmail}` : '#';
 
+            // Drive Resource
+            const driveSection = document.getElementById('viewPropertyDriveSection');
+            const driveLinkEl = document.getElementById('viewPropertyDriveLink');
+            if (property.driveLink) {
+                driveLinkEl.href = property.driveLink;
+                driveSection.classList.remove('hidden');
+            } else {
+                driveLinkEl.href = '#';
+                driveSection.classList.add('hidden');
+            }
+
             // Created At
             document.getElementById('viewPropertyCreatedAt').textContent = property.createdAt
                 ? new Date(property.createdAt).toLocaleDateString('en-US', { dateStyle: 'long' })
@@ -3655,11 +3702,17 @@
             if (!currentViewPropertyId) return;
 
             if (!confirm('Are you sure you want to approve this listing?')) return;
+            const message = prompt('Approval message to user:', 'Your listing has been approved.');
+            if (!message || message.trim() === '') {
+                alert('Approval message is required.');
+                return;
+            }
 
             try {
                 const response = await fetch(`${API_BASE}/api/admin/listings/${currentViewPropertyId}/approve`, {
                     method: 'PUT',
-                    headers: getAuthHeaders()
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ message: message.trim() })
                 });
 
                 if (!response.ok) throw new Error('Failed to approve listing');
@@ -3688,7 +3741,7 @@
                 const response = await fetch(`${API_BASE}/api/admin/listings/${currentViewPropertyId}/reject`, {
                     method: 'PUT',
                     headers: getAuthHeaders(),
-                    body: JSON.stringify({ reason: reason.trim() })
+                    body: JSON.stringify({ message: reason.trim() })
                 });
 
                 if (!response.ok) throw new Error('Failed to reject listing');

@@ -38,9 +38,14 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**", "/api/properties/**", "/api/agents/**", "/api/files/**",
                                 "/uploads/**")
                         .permitAll()
+                        .requestMatchers("/api/notifications/stream").permitAll()
                         .requestMatchers("/api/seller/apply", "/api/seller/activate").permitAll()
+                        // WebSocket endpoints - allow connection, auth handled via token param
+                        .requestMatchers("/ws/**").permitAll()
                         // Admin only
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        // Agent only
+                        .requestMatchers("/api/agent/**").hasRole("AGENT")
                         // Seller only
                         .requestMatchers("/api/seller/properties").hasRole("SELLER")
                         .anyRequest().authenticated())

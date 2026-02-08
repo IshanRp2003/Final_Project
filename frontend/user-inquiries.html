@@ -126,21 +126,21 @@
                 class="flex-none px-6 py-4 border-b border-[#27272a] flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-black/50 backdrop-blur-sm sticky top-0 z-10">
                 <!-- Status Pills -->
                 <div class="flex items-center gap-2 overflow-x-auto no-scrollbar">
-                    <button
+                    <button onclick="filterInquiries('ALL')"
                         class="flex items-center justify-center h-8 px-4 rounded-full bg-primary/20 text-primary border border-primary/50 text-sm font-medium transition-all hover:bg-primary/30">
-                        All <span class="ml-2 opacity-70 text-xs">24</span>
+                        All <span class="ml-2 opacity-70 text-xs">0</span>
                     </button>
-                    <button
+                    <button onclick="filterInquiries('PENDING')"
                         class="flex items-center justify-center h-8 px-4 rounded-full bg-[#18181b] text-text-secondary border border-[#27272a] hover:border-gray-500 hover:text-white text-sm font-medium transition-all">
-                        Pending <span class="ml-2 opacity-70 text-xs">8</span>
+                        Pending <span class="ml-2 opacity-70 text-xs">0</span>
                     </button>
-                    <button
+                    <button onclick="filterInquiries('REPLIED')"
                         class="flex items-center justify-center h-8 px-4 rounded-full bg-[#18181b] text-text-secondary border border-[#27272a] hover:border-gray-500 hover:text-white text-sm font-medium transition-all">
-                        Replied <span class="ml-2 opacity-70 text-xs">12</span>
+                        Replied <span class="ml-2 opacity-70 text-xs">0</span>
                     </button>
-                    <button
+                    <button onclick="filterInquiries('CLOSED')"
                         class="flex items-center justify-center h-8 px-4 rounded-full bg-[#18181b] text-text-secondary border border-[#27272a] hover:border-gray-500 hover:text-white text-sm font-medium transition-all">
-                        Closed <span class="ml-2 opacity-70 text-xs">4</span>
+                        Closed <span class="ml-2 opacity-70 text-xs">0</span>
                     </button>
                 </div>
                 <!-- Sort Dropdown -->
@@ -158,210 +158,12 @@
                     </div>
                 </div>
             </div>
-            <!-- Scrollable List -->
+            <!-- Scrollable List (populated dynamically by JavaScript) -->
             <div class="flex-1 overflow-y-auto p-6 space-y-4">
-                <!-- Card 1: Pending & Unread -->
-                <article
-                    class="group relative flex flex-col md:flex-row gap-4 bg-surface-dark border border-[#27272a] rounded-xl p-4 hover:border-primary/50 hover:shadow-[0_0_15px_rgba(6,249,128,0.1)] transition-all duration-200">
-                    <!-- Unread Indicator -->
-                    <div class="absolute top-4 right-4 md:right-auto md:left-4 md:top-4 z-10">
-                        <span class="flex h-3 w-3">
-                            <span
-                                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                            <span class="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
-                        </span>
-                    </div>
-                    <!-- Thumbnail -->
-                    <div class="w-full md:w-48 aspect-video md:aspect-[4/3] rounded-lg bg-cover bg-center shrink-0 border border-[#27272a]"
-                        data-alt="Modern high-rise apartment exterior with glass facade"
-                        style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCyCDHJgbU9g520pcTjsIMWcxeY-Gf3E9fUlEFxfjW9qaqPE0P2hVbh3K1QaEVk37pWWfej16-dFt_ZTqusuFb7nwjwZvVTqezpg3knJKYLUUfWVUFwlxrgbAZbsfeaEt2xOPDLyU_-oU-jQFZLD0zKIQ2Yo-IXyUNeGY1WynB87SfTrXps3QdPbZEaBjvHl6UM8V8JKDLNFnLXdQDM8D2KjtaRza9C5wdpZ-C5KHZrBJ-CPkWO8SWap0-XXxHyk8OygOvoi-e1gWcT');">
-                    </div>
-                    <!-- Content -->
-                    <div class="flex-1 flex flex-col justify-between gap-3">
-                        <div>
-                            <div class="flex items-start justify-between">
-                                <div>
-                                    <div class="flex items-center gap-2 mb-1">
-                                        <span
-                                            class="inline-flex items-center rounded-md border border-yellow-500/30 bg-yellow-500/10 px-2 py-0.5 text-xs font-medium text-yellow-500 ring-1 ring-inset ring-yellow-500/20">Pending</span>
-                                        <span class="text-xs text-text-secondary flex items-center gap-1">
-                                            <span class="material-symbols-outlined text-[14px]">schedule</span> 2 hrs
-                                            ago
-                                        </span>
-                                    </div>
-                                    <a class="text-lg font-bold text-white group-hover:text-primary transition-colors leading-tight"
-                                        href="#">Modern Loft in Downtown</a>
-                                    <p class="text-text-secondary text-sm mt-0.5">123 Market St, San Francisco • <span
-                                            class="text-white font-semibold">$4,500/mo</span></p>
-                                </div>
-                            </div>
-                            <div class="mt-3 bg-[#1a1a1a] rounded-lg p-3 border border-[#27272a]">
-                                <p class="text-sm text-gray-300 line-clamp-2">"Hi, is this unit still available for a
-                                    viewing this weekend? I'm looking to move in by the first of next month..."</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center justify-between pt-2 border-t border-[#27272a] mt-1">
-                            <div class="flex items-center gap-2">
-                                <img alt="Agent Avatar" class="h-6 w-6 rounded-full ring-2 ring-[#27272a]"
-                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZ6wcaJE3-GlatfpEWEnkSZZOFBhgcunOlfgj7yYvBO6etE954jmxf3kpmFuzQEBiXl2il5OHALjLRp2wcNupap6R4OdC0T10RIohhPbZEB8dRSmO_wKCpPrE7v1eY7fosWHHyP5yZ3_bBHP2M-bIkXqi7bhOy9xnc1UHFbbVr02wOiUFUEBTbqKpcmr6zJIRhpWla1weZeTv7nRnbMeV0lPGW2rQGLBJL4ZpgDKqnggiggm1Ywod45vLSvhw1hTaV3I2GdXlm09s9" />
-                                <span class="text-xs text-gray-400">Assigned to <span class="text-white">Sarah
-                                        Jenkins</span></span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <button
-                                    class="text-xs font-medium text-text-secondary hover:text-white px-3 py-1.5 border border-transparent hover:border-[#3f3f46] rounded-md transition-colors">Mark
-                                    Closed</button>
-                                <button onclick="window.location.href='/inquiry-chat.html'"
-                                    class="flex items-center gap-1.5 bg-primary hover:bg-primary-dark text-black text-xs font-bold px-4 py-1.5 rounded-md transition-colors shadow-[0_0_10px_rgba(6,249,128,0.2)]">
-                                    <span class="material-symbols-outlined text-[16px]">chat</span>
-                                    Open Chat
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </article>
-                <!-- Card 2: Replied -->
-                <article
-                    class="group relative flex flex-col md:flex-row gap-4 bg-surface-dark border border-[#27272a] rounded-xl p-4 hover:border-primary/30 transition-all duration-200">
-                    <div class="w-full md:w-48 aspect-video md:aspect-[4/3] rounded-lg bg-cover bg-center shrink-0 border border-[#27272a]"
-                        data-alt="Sunny suburban house with green lawn"
-                        style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAhxbzy0GBVFtAc2AtzDnDgd9s594dFc72rTLfNRaNuImU6XZE1Ru9-XSgw-h8olbp8xFyZaN8EGANM51VMlwxa1JJ7iQpTmksbpDG2tLQmn1GtXh7bu636b83UIwXfIkw0AypymMOSmqOU_QGO2tU8XEoJJcymHNyFABO7B0vpm8KhJ2rujDRxVZ0bKRChAwu6TKuclBXy57HBCYxWeYQ7VSG_yiBC8gDgILsHrAaX370drGgzcYz4q66JGci6t7RfnUFsmUMR7ROq');">
-                    </div>
-                    <div class="flex-1 flex flex-col justify-between gap-3">
-                        <div>
-                            <div class="flex items-start justify-between">
-                                <div>
-                                    <div class="flex items-center gap-2 mb-1">
-                                        <span
-                                            class="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary ring-1 ring-inset ring-primary/20">Replied</span>
-                                        <span class="text-xs text-text-secondary flex items-center gap-1">
-                                            <span class="material-symbols-outlined text-[14px]">schedule</span> 5 hrs
-                                            ago
-                                        </span>
-                                    </div>
-                                    <a class="text-lg font-bold text-white group-hover:text-primary transition-colors leading-tight"
-                                        href="#">Sunny 2BHK Apartment</a>
-                                    <p class="text-text-secondary text-sm mt-0.5">45 Maple Ave, Suburbs • <span
-                                            class="text-white font-semibold">$2,200/mo</span></p>
-                                </div>
-                            </div>
-                            <div class="mt-3 pl-3 border-l-2 border-[#27272a]">
-                                <p class="text-sm text-text-secondary line-clamp-1 italic">Last message: "Sure, let's
-                                    schedule for Tuesday at 2 PM."</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center justify-between pt-2 border-t border-[#27272a] mt-1">
-                            <div class="flex items-center gap-2">
-                                <img alt="Agent Avatar" class="h-6 w-6 rounded-full ring-2 ring-[#27272a]"
-                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuDwDqTHRJSKTM9p7zHy8xx5I6qBVZtCAXvTRHSUkDWGOF1whYav9evWakQNMj8R2V37dQ8hTT2dgVFuQHIlbDGfjhYzikiCguXwk7LNct6um_eBLQLWUEMxDwhIFQcVuhhiONMJFi60fAKgQeqz5NxMeX1Igt47CE5yLTWoLWYd6seM-wZQ7wvxInz_hU6vLCVPtFX_Bp0MookqtDVBrBnmKQvhxy3FPBKMtifL2_C4G0TWmMCjrmA6dW8nL_OAgcgEsD5d3EUL0ISg" />
-                                <span class="text-xs text-gray-400">Assigned to <span class="text-white">Mike
-                                        Ross</span></span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <button
-                                    class="text-xs font-medium text-text-secondary hover:text-white px-3 py-1.5 border border-transparent hover:border-[#3f3f46] rounded-md transition-colors">Mark
-                                    Closed</button>
-                                <button onclick="window.location.href='/inquiry-chat.html'"
-                                    class="flex items-center gap-1.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 hover:border-primary/40 text-xs font-bold px-4 py-1.5 rounded-md transition-colors">
-                                    <span class="material-symbols-outlined text-[16px]">forum</span>
-                                    Continue Chat
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </article>
-                <!-- Card 3: Pending -->
-                <article
-                    class="group relative flex flex-col md:flex-row gap-4 bg-surface-dark border border-[#27272a] rounded-xl p-4 hover:border-primary/30 transition-all duration-200 opacity-90">
-                    <div class="w-full md:w-48 aspect-video md:aspect-[4/3] rounded-lg bg-cover bg-center shrink-0 border border-[#27272a]"
-                        data-alt="Modern studio apartment interior view"
-                        style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBApCbsYlkGrlUF0yQyC7eF9aJT72f0n55sqJLTiM2PIbOOcEYtCdxqYdBGu-LmjVebDn6MHNR8t3tid7bS5HGRW6VanXA68vkbo_xNbBlbAgA7Um8e2cWPZBDHCXMOAqZAeIbqc8kicwT8aCi89wgNuAnwmmvwAfIVqe_2PVj3ga3GUdCWKGOBagkr3xRQSbdm2NUzxVzc7_xzbNhR7x8eB8LFEt78pDHppr_fncxFFl12_fFF-TTl008jyElvyX9GQYKnsd-M_6M7');">
-                    </div>
-                    <div class="flex-1 flex flex-col justify-between gap-3">
-                        <div>
-                            <div class="flex items-start justify-between">
-                                <div>
-                                    <div class="flex items-center gap-2 mb-1">
-                                        <span
-                                            class="inline-flex items-center rounded-md border border-yellow-500/30 bg-yellow-500/10 px-2 py-0.5 text-xs font-medium text-yellow-500 ring-1 ring-inset ring-yellow-500/20">Pending</span>
-                                        <span class="text-xs text-text-secondary flex items-center gap-1">
-                                            <span class="material-symbols-outlined text-[14px]">schedule</span> 1 day
-                                            ago
-                                        </span>
-                                    </div>
-                                    <a class="text-lg font-bold text-white group-hover:text-primary transition-colors leading-tight"
-                                        href="#">Compact Studio near Univ</a>
-                                    <p class="text-text-secondary text-sm mt-0.5">88 University Dr, Campus Area • <span
-                                            class="text-white font-semibold">$1,100/mo</span></p>
-                                </div>
-                            </div>
-                            <div class="mt-3 bg-[#1a1a1a] rounded-lg p-3 border border-[#27272a]">
-                                <p class="text-sm text-gray-300 line-clamp-2">"Hello, do you accept pets? I have a small
-                                    cat."</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center justify-between pt-2 border-t border-[#27272a] mt-1">
-                            <div class="flex items-center gap-2">
-                                <img alt="Agent Avatar" class="h-6 w-6 rounded-full ring-2 ring-[#27272a]"
-                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAIUJNwDWwjmriyZtiF7hDaD0Q6PRmawDhWmGYRlC4sQBSyCNwu1MjXrgRt-j6Mp3q7grhzknDjSBYB0zKndkSH7GDVm7GOCQR45A4jbRqzWYimiJLicd6823ySfUZeqrLH0hdjjiZAqxe-xdLZ3gLPDQj3tLhM4NFYUlPdXrUffxiBL5vxvMcRKSFrcG1Canzx0e5x6Y4n3eUq0LX-V-M_m1W2Rfjm-DTVimQHOACFJ_LUIupaLyE_Oax_hmYQcYGPo5-c7rqy6nwq" />
-                                <span class="text-xs text-gray-400">Assigned to <span class="text-white">Alex
-                                        Morgan</span></span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <button
-                                    class="text-xs font-medium text-text-secondary hover:text-white px-3 py-1.5 border border-transparent hover:border-[#3f3f46] rounded-md transition-colors">Mark
-                                    Closed</button>
-                                <button onclick="window.location.href='/inquiry-chat.html'"
-                                    class="flex items-center gap-1.5 bg-primary hover:bg-primary-dark text-black text-xs font-bold px-4 py-1.5 rounded-md transition-colors shadow-[0_0_10px_rgba(6,249,128,0.2)]">
-                                    <span class="material-symbols-outlined text-[16px]">chat</span>
-                                    Open Chat
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </article>
-                <!-- Card 4: Closed -->
-                <article
-                    class="group relative flex flex-col md:flex-row gap-4 bg-surface-dark border border-[#27272a] rounded-xl p-4 opacity-60 hover:opacity-100 transition-all duration-200">
-                    <div class="w-full md:w-48 aspect-video md:aspect-[4/3] rounded-lg bg-cover bg-center shrink-0 border border-[#27272a] grayscale"
-                        data-alt="Cozy cottage with garden in autumn"
-                        style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCoJOxIu_XiFbTo0MZnCFKlVLRn-M1ZqMCaJn8ZjxwhrXsB_2rza7Kl2ArPY_IWqWLJc5nMf7OB0sPGtX3jdPOMjWrIdQimoTf5WnlbXhNG2NXnM-ba6TU6q38VvWDNe8NzcTbF3CiDLyZyFdgMU7OY62S6l5qr9JQcYyUAHI8NW3hgUH4JNa28vb-drHtgePBtVyEpAgPw198JgA26Jpl6Ig25eAyY2Hdo871CvscoKdY5PiKsVO5JtnJ1YeyvRcbj4tZ7LlcLk9Ij');">
-                    </div>
-                    <div class="flex-1 flex flex-col justify-between gap-3">
-                        <div>
-                            <div class="flex items-start justify-between">
-                                <div>
-                                    <div class="flex items-center gap-2 mb-1">
-                                        <span
-                                            class="inline-flex items-center rounded-md bg-[#27272a] px-2 py-0.5 text-xs font-medium text-gray-400 ring-1 ring-inset ring-gray-500/10">Closed</span>
-                                        <span class="text-xs text-text-secondary flex items-center gap-1">
-                                            <span class="material-symbols-outlined text-[14px]">schedule</span> 3 days
-                                            ago
-                                        </span>
-                                    </div>
-                                    <a class="text-lg font-bold text-gray-300 group-hover:text-primary transition-colors leading-tight line-through decoration-gray-600"
-                                        href="#">Riverside Cottage</a>
-                                    <p class="text-text-secondary text-sm mt-0.5">102 River Rd, Northside • <span
-                                            class="text-gray-400 font-semibold">$3,000/mo</span></p>
-                                </div>
-                            </div>
-                            <div class="mt-3 pl-3 border-l-2 border-[#27272a]">
-                                <p class="text-sm text-text-secondary line-clamp-1">Inquiry closed by agent.</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center justify-between pt-2 border-t border-[#27272a] mt-1">
-                            <div class="flex items-center gap-2">
-                                <span class="material-symbols-outlined text-gray-500 text-lg">check_circle</span>
-                                <span class="text-xs text-gray-400">Resolved</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <button
-                                    class="text-xs font-medium text-text-secondary hover:text-white px-3 py-1.5 rounded-md transition-colors">View
-                                    Details</button>
-                            </div>
-                        </div>
-                    </div>
-                </article>
+                <!-- Loading placeholder - will be replaced by JavaScript -->
+                <div class="flex justify-center py-12">
+                    <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
+                </div>
             </div>
         </main>
         <!-- Right: Sidebar Stats & Settings -->
@@ -461,6 +263,17 @@
         </aside>
     </div>
     <script>
+        const API_URL = 'http://localhost:8080/api';
+        let allInquiries = [];
+        let currentFilter = 'ALL';
+
+        // Auth check
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.href);
+        }
+
+        // Display user name
         document.addEventListener('DOMContentLoaded', () => {
             const userStr = localStorage.getItem('user');
             if (userStr) {
@@ -468,7 +281,238 @@
                 const nameEl = document.getElementById('user-name');
                 if (nameEl) nameEl.textContent = user.name || 'User';
             }
+            loadInquiries();
         });
+
+        // Format relative time
+        function timeAgo(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = Math.floor((now - date) / 1000);
+
+            if (diff < 60) return 'just now';
+            if (diff < 3600) return Math.floor(diff / 60) + ' min ago';
+            if (diff < 86400) return Math.floor(diff / 3600) + ' hrs ago';
+            if (diff < 604800) return Math.floor(diff / 86400) + ' days ago';
+            return date.toLocaleDateString();
+        }
+
+        // Get status badge HTML
+        function getStatusBadge(status) {
+            switch (status) {
+                case 'PENDING':
+                    return `<span class="inline-flex items-center rounded-md border border-yellow-500/30 bg-yellow-500/10 px-2 py-0.5 text-xs font-medium text-yellow-500 ring-1 ring-inset ring-yellow-500/20">Pending</span>`;
+                case 'REPLIED':
+                    return `<span class="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary ring-1 ring-inset ring-primary/20">Replied</span>`;
+                case 'CLOSED':
+                    return `<span class="inline-flex items-center rounded-md bg-[#27272a] px-2 py-0.5 text-xs font-medium text-gray-400 ring-1 ring-inset ring-gray-500/10">Closed</span>`;
+                default:
+                    return `<span class="inline-flex items-center rounded-md bg-gray-500/10 px-2 py-0.5 text-xs font-medium text-gray-400">${status}</span>`;
+            }
+        }
+
+        // Render inquiry card
+        function renderInquiryCard(inquiry) {
+            const isClosed = inquiry.status === 'CLOSED';
+            const isPending = inquiry.status === 'PENDING';
+            const hasUnread = inquiry.hasUnreadMessage;
+
+            return `
+                <article class="group relative flex flex-col md:flex-row gap-4 bg-surface-dark border border-[#27272a] rounded-xl p-4 ${isClosed ? 'opacity-60 hover:opacity-100' : 'hover:border-primary/50 hover:shadow-[0_0_15px_rgba(6,249,128,0.1)]'} transition-all duration-200">
+                    ${hasUnread ? `
+                    <div class="absolute top-4 right-4 md:right-auto md:left-4 md:top-4 z-10">
+                        <span class="flex h-3 w-3">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+                        </span>
+                    </div>
+                    ` : ''}
+                    <div class="w-full md:w-48 aspect-video md:aspect-[4/3] rounded-lg bg-cover bg-center shrink-0 border border-[#27272a] ${isClosed ? 'grayscale' : ''}"
+                        style="background-image: url('${inquiry.propertyImage || 'https://via.placeholder.com/300x200?text=Property'}');">
+                    </div>
+                    <div class="flex-1 flex flex-col justify-between gap-3">
+                        <div>
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <div class="flex items-center gap-2 mb-1">
+                                        ${getStatusBadge(inquiry.status)}
+                                        <span class="text-xs text-text-secondary flex items-center gap-1">
+                                            <span class="material-symbols-outlined text-[14px]">schedule</span>
+                                            ${timeAgo(inquiry.lastMessageAt || inquiry.createdAt)}
+                                        </span>
+                                    </div>
+                                    <a class="text-lg font-bold ${isClosed ? 'text-gray-300 line-through decoration-gray-600' : 'text-white'} group-hover:text-primary transition-colors leading-tight"
+                                        href="/view-property.html?id=${inquiry.propertyId}">${inquiry.propertyTitle || 'Property'}</a>
+                                    <p class="text-text-secondary text-sm mt-0.5">${inquiry.propertyAddress || ''} • <span class="${isClosed ? 'text-gray-400' : 'text-white'} font-semibold">$${(inquiry.propertyPrice || 0).toLocaleString()}</span></p>
+                                </div>
+                            </div>
+                            <div class="mt-3 ${isPending ? 'bg-[#1a1a1a] rounded-lg p-3 border border-[#27272a]' : 'pl-3 border-l-2 border-[#27272a]'}">
+                                <p class="text-sm ${isPending ? 'text-gray-300' : 'text-text-secondary italic'} line-clamp-2">${inquiry.lastMessage || 'No messages yet'}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between pt-2 border-t border-[#27272a] mt-1">
+                            <div class="flex items-center gap-2">
+                                ${inquiry.agentName ? `
+                                    <div class="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center text-xs text-primary font-bold ring-2 ring-[#27272a]">
+                                        ${inquiry.agentName.charAt(0).toUpperCase()}
+                                    </div>
+                                    <span class="text-xs text-gray-400">Assigned to <span class="text-white">${inquiry.agentName}</span></span>
+                                ` : `
+                                    <span class="material-symbols-outlined text-gray-500 text-lg">hourglass_empty</span>
+                                    <span class="text-xs text-gray-400">Awaiting agent assignment</span>
+                                `}
+                            </div>
+                            <div class="flex items-center gap-2">
+                                ${!isClosed ? `
+                                    <button onclick="closeInquiry(${inquiry.id})"
+                                        class="text-xs font-medium text-text-secondary hover:text-white px-3 py-1.5 border border-transparent hover:border-[#3f3f46] rounded-md transition-colors">Mark Closed</button>
+                                    <button onclick="window.location.href='/inquiry-chat.html?id=${inquiry.id}'"
+                                        class="flex items-center gap-1.5 ${isPending ? 'bg-primary hover:bg-primary-dark text-black shadow-[0_0_10px_rgba(6,249,128,0.2)]' : 'bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 hover:border-primary/40'} text-xs font-bold px-4 py-1.5 rounded-md transition-colors">
+                                        <span class="material-symbols-outlined text-[16px]">${isPending ? 'chat' : 'forum'}</span>
+                                        ${isPending ? 'Open Chat' : 'Continue Chat'}
+                                    </button>
+                                ` : `
+                                    <button onclick="window.location.href='/inquiry-chat.html?id=${inquiry.id}'"
+                                        class="text-xs font-medium text-text-secondary hover:text-white px-3 py-1.5 rounded-md transition-colors">View Details</button>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            `;
+        }
+
+        // Load inquiries from API
+        async function loadInquiries() {
+            const listContainer = document.querySelector('.flex-1.overflow-y-auto.p-6.space-y-4');
+
+            listContainer.innerHTML = `
+                <div class="flex justify-center py-12">
+                    <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
+                </div>
+            `;
+
+            try {
+                const response = await fetch(`${API_URL}/inquiries/my`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load inquiries');
+                }
+
+                allInquiries = await response.json();
+                updateFilterCounts();
+                renderInquiries();
+
+            } catch (error) {
+                console.error('Error loading inquiries:', error);
+                listContainer.innerHTML = `
+                    <div class="text-center py-12">
+                        <span class="material-symbols-outlined text-5xl text-gray-600 mb-4">error_outline</span>
+                        <p class="text-gray-400">Failed to load inquiries</p>
+                        <button onclick="loadInquiries()" class="mt-4 text-primary hover:underline">Try again</button>
+                    </div>
+                `;
+            }
+        }
+
+        // Filter inquiries
+        function filterInquiries(status) {
+            currentFilter = status;
+
+            // Update filter button styles
+            const buttons = document.querySelectorAll('.flex.items-center.gap-2.overflow-x-auto button');
+            buttons.forEach(btn => {
+                const btnStatus = btn.textContent.trim().split(' ')[0].toUpperCase();
+                if (btnStatus === status || (status === 'ALL' && btn.textContent.includes('All'))) {
+                    btn.className = 'flex items-center justify-center h-8 px-4 rounded-full bg-primary/20 text-primary border border-primary/50 text-sm font-medium transition-all hover:bg-primary/30';
+                } else {
+                    btn.className = 'flex items-center justify-center h-8 px-4 rounded-full bg-[#18181b] text-text-secondary border border-[#27272a] hover:border-gray-500 hover:text-white text-sm font-medium transition-all';
+                }
+            });
+
+            renderInquiries();
+        }
+
+        // Render inquiries list
+        function renderInquiries() {
+            const listContainer = document.querySelector('.flex-1.overflow-y-auto.p-6.space-y-4');
+
+            let filtered = allInquiries;
+            if (currentFilter !== 'ALL') {
+                filtered = allInquiries.filter(inq => inq.status === currentFilter);
+            }
+
+            if (filtered.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="text-center py-12">
+                        <span class="material-symbols-outlined text-5xl text-gray-600 mb-4">inbox</span>
+                        <p class="text-gray-400">No inquiries ${currentFilter !== 'ALL' ? `with status "${currentFilter.toLowerCase()}"` : 'yet'}</p>
+                        <a href="/properties.html" class="mt-4 inline-block text-primary hover:underline">Browse properties</a>
+                    </div>
+                `;
+                return;
+            }
+
+            listContainer.innerHTML = filtered.map(renderInquiryCard).join('');
+        }
+
+        // Update filter counts
+        function updateFilterCounts() {
+            const counts = {
+                ALL: allInquiries.length,
+                PENDING: allInquiries.filter(i => i.status === 'PENDING').length,
+                REPLIED: allInquiries.filter(i => i.status === 'REPLIED').length,
+                CLOSED: allInquiries.filter(i => i.status === 'CLOSED').length
+            };
+
+            const buttons = document.querySelectorAll('.flex.items-center.gap-2.overflow-x-auto button');
+            buttons.forEach(btn => {
+                const text = btn.textContent.trim();
+                if (text.includes('All')) {
+                    btn.innerHTML = `All <span class="ml-2 opacity-70 text-xs">${counts.ALL}</span>`;
+                } else if (text.includes('Pending')) {
+                    btn.innerHTML = `Pending <span class="ml-2 opacity-70 text-xs">${counts.PENDING}</span>`;
+                } else if (text.includes('Replied')) {
+                    btn.innerHTML = `Replied <span class="ml-2 opacity-70 text-xs">${counts.REPLIED}</span>`;
+                } else if (text.includes('Closed')) {
+                    btn.innerHTML = `Closed <span class="ml-2 opacity-70 text-xs">${counts.CLOSED}</span>`;
+                }
+            });
+
+            // Update sidebar stats
+            const newTodayEl = document.querySelector('.flex-none .text-2xl');
+            if (newTodayEl) {
+                const today = new Date();
+                const newToday = allInquiries.filter(i => {
+                    const created = new Date(i.createdAt);
+                    return created.toDateString() === today.toDateString();
+                }).length;
+                newTodayEl.textContent = newToday;
+            }
+        }
+
+        // Close inquiry
+        async function closeInquiry(id) {
+            if (!confirm('Are you sure you want to close this inquiry?')) return;
+
+            try {
+                // Note: Users don't have close endpoint, but keeping for future use
+                // For now this is a placeholder
+                alert('Inquiry closed successfully');
+                loadInquiries();
+            } catch (error) {
+                console.error('Error closing inquiry:', error);
+                alert('Failed to close inquiry');
+            }
+        }
+
+        // Make filter function global
+        window.filterInquiries = filterInquiries;
+        window.closeInquiry = closeInquiry;
     </script>
 </body>
 

@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Inquiries - Real Estate</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-4">
+                    <a href="/admin-dashboard.html"
+                        class="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors">
+                        <span class="material-symbols-outlined">arrow_back</span>
+                        <span class="text-sm font-medium">Back to Dashboard</span>
+                    </a>
+                    <div class="h-6 w-px bg-gray-200"></div>
+                    <h1 class="text-xl font-bold text-gray-900">Inquiry Management</h1>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span id="pendingBadge"
+                        class="hidden bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-sm font-semibold">
+                        <span id="pendingCount">0</span> Pending
+                    </span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white rounded-xl border border-gray-200 p-5">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500">Total Inquiries</p>
+                        <p id="statTotal" class="text-2xl font-bold text-gray-900">0</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-blue-600">mail</span>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-200 p-5">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500">Pending</p>
+                        <p id="statPending" class="text-2xl font-bold text-orange-600">0</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-orange-50 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-orange-600">pending</span>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-200 p-5">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500">Replied</p>
+                        <p id="statReplied" class="text-2xl font-bold text-green-600">0</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-green-600">check_circle</span>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-200 p-5">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500">Closed</p>
+                        <p id="statClosed" class="text-2xl font-bold text-gray-600">0</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-gray-600">archive</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-white rounded-xl border border-gray-200 p-4 mb-6">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <div class="flex gap-2">
+                    <button onclick="filterInquiries('ALL')" data-status="ALL"
+                        class="filter-btn px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white">All</button>
+                    <button onclick="filterInquiries('PENDING')" data-status="PENDING"
+                        class="filter-btn px-4 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200">Pending</button>
+                    <button onclick="filterInquiries('REPLIED')" data-status="REPLIED"
+                        class="filter-btn px-4 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200">Replied</button>
+                    <button onclick="filterInquiries('CLOSED')" data-status="CLOSED"
+                        class="filter-btn px-4 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200">Closed</button>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-gray-400">search</span>
+                    <input type="text" id="searchInput" placeholder="Search inquiries..."
+                        class="border-0 outline-none text-sm text-gray-600 bg-transparent w-64"
+                        oninput="searchInquiries(this.value)">
+                </div>
+            </div>
+        </div>
+
+        <!-- Inquiries Table -->
+        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                            <th
+                                class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                Property</th>
+                            <th
+                                class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                User</th>
+                            <th
+                                class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                Message</th>
+                            <th
+                                class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                Agent</th>
+                            <th
+                                class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                Date</th>
+                            <th
+                                class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                Status</th>
+                            <th
+                                class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inquiriesTableBody" class="divide-y divide-gray-100">
+                        <tr id="loadingRow">
+                            <td colspan="7" class="px-6 py-16 text-center">
+                                <div class="flex flex-col items-center">
+                                    <div
+                                        class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-600 mb-4">
+                                    </div>
+                                    <span class="text-gray-500">Loading inquiries...</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Assign Agent Modal -->
+    <div id="assignModal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/50" onclick="closeAssignModal()"></div>
+        <div class="absolute inset-0 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+                <div class="p-6 border-b border-gray-100">
+                    <h3 class="text-lg font-bold text-gray-900">Assign Agent</h3>
+                    <p class="text-sm text-gray-500 mt-1">Select an agent to handle this inquiry</p>
+                </div>
+                <div class="p-6">
+                    <select id="agentSelect"
+                        class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none">
+                        <option value="">Select an agent...</option>
+                    </select>
+                </div>
+                <div class="p-6 border-t border-gray-100 flex justify-end gap-3">
+                    <button onclick="closeAssignModal()"
+                        class="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">Cancel</button>
+                    <button onclick="confirmAssign()"
+                        class="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Assign</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8080/api';
+        let allInquiries = [];
+        let filteredInquiries = [];
+        let currentFilter = 'ALL';
+        let searchQuery = '';
+        let currentInquiryId = null;
+        let agents = [];
+
+        // Auth check
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.href);
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffHours = Math.floor((now - date) / (1000 * 60 * 60));
+            if (diffHours < 1) return 'Just now';
+            if (diffHours < 24) return `${diffHours}h ago`;
+            if (diffHours < 48) return 'Yesterday';
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        // Get status badge
+        function getStatusBadge(status) {
+            switch (status) {
+                case 'PENDING':
+                    return '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">Pending</span>';
+                case 'REPLIED':
+                    return '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Replied</span>';
+                case 'CLOSED':
+                    return '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Closed</span>';
+                default:
+                    return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">${status}</span>`;
+            }
+        }
+
+        // Render inquiry row
+        function renderInquiryRow(inquiry) {
+            const propertyTitle = inquiry.propertyTitle || 'Unknown Property';
+            const userName = inquiry.userName || 'Unknown User';
+            const agentName = inquiry.agentName || '<span class="text-gray-400 italic">Unassigned</span>';
+            const message = inquiry.initialMessage || inquiry.lastMessageText || '';
+            const truncatedMessage = message.length > 40 ? message.substring(0, 40) + '...' : message;
+
+            return `
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                                <span class="material-symbols-outlined text-blue-600">home</span>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-sm font-medium text-gray-900 truncate">${propertyTitle}</p>
+                                <p class="text-xs text-gray-500">ID: ${inquiry.propertyId || 'N/A'}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xs font-bold">
+                                ${userName.charAt(0).toUpperCase()}
+                            </div>
+                            <span class="text-sm text-gray-700">${userName}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <p class="text-sm text-gray-600 max-w-xs truncate">${truncatedMessage}</p>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="text-sm">${agentName}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="text-sm text-gray-500">${formatDate(inquiry.createdAt)}</span>
+                    </td>
+                    <td class="px-6 py-4">${getStatusBadge(inquiry.status)}</td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-2">
+                            <button onclick="openChat(${inquiry.id})" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="View Chat">
+                                <span class="material-symbols-outlined text-lg">chat</span>
+                            </button>
+                            <button onclick="openAssignModal(${inquiry.id})" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors" title="Assign Agent">
+                                <span class="material-symbols-outlined text-lg">person_add</span>
+                            </button>
+                            ${inquiry.status !== 'CLOSED' ? `
+                            <button onclick="closeInquiry(${inquiry.id})" class="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Close Inquiry">
+                                <span class="material-symbols-outlined text-lg">close</span>
+                            </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+
+        // Update stats
+        function updateStats() {
+            const total = allInquiries.length;
+            const pending = allInquiries.filter(i => i.status === 'PENDING').length;
+            const replied = allInquiries.filter(i => i.status === 'REPLIED').length;
+            const closed = allInquiries.filter(i => i.status === 'CLOSED').length;
+
+            document.getElementById('statTotal').textContent = total;
+            document.getElementById('statPending').textContent = pending;
+            document.getElementById('statReplied').textContent = replied;
+            document.getElementById('statClosed').textContent = closed;
+
+            const pendingBadge = document.getElementById('pendingBadge');
+            if (pending > 0) {
+                document.getElementById('pendingCount').textContent = pending;
+                pendingBadge.classList.remove('hidden');
+            } else {
+                pendingBadge.classList.add('hidden');
+            }
+        }
+
+        // Apply filters and search
+        function applyFilters() {
+            filteredInquiries = allInquiries;
+
+            if (currentFilter !== 'ALL') {
+                filteredInquiries = filteredInquiries.filter(inq => inq.status === currentFilter);
+            }
+
+            if (searchQuery) {
+                const query = searchQuery.toLowerCase();
+                filteredInquiries = filteredInquiries.filter(inq =>
+                    (inq.propertyTitle || '').toLowerCase().includes(query) ||
+                    (inq.userName || '').toLowerCase().includes(query) ||
+                    (inq.agentName || '').toLowerCase().includes(query) ||
+                    (inq.initialMessage || '').toLowerCase().includes(query)
+                );
+            }
+
+            renderInquiries();
+        }
+
+        // Render inquiries
+        function renderInquiries() {
+            const tbody = document.getElementById('inquiriesTableBody');
+
+            if (filteredInquiries.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="px-6 py-16 text-center">
+                            <span class="material-symbols-outlined text-5xl text-gray-300 mb-2 block">inbox</span>
+                            <p class="text-gray-500">No inquiries found</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = filteredInquiries.map(renderInquiryRow).join('');
+        }
+
+        // Filter inquiries
+        function filterInquiries(status) {
+            currentFilter = status;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                if (btn.dataset.status === status) {
+                    btn.classList.remove('bg-gray-100', 'text-gray-600');
+                    btn.classList.add('bg-blue-600', 'text-white');
+                } else {
+                    btn.classList.remove('bg-blue-600', 'text-white');
+                    btn.classList.add('bg-gray-100', 'text-gray-600');
+                }
+            });
+            applyFilters();
+        }
+
+        // Search inquiries
+        function searchInquiries(query) {
+            searchQuery = query;
+            applyFilters();
+        }
+
+        // Load inquiries
+        async function loadInquiries() {
+            try {
+                const response = await fetch(`${API_URL}/admin/inquiries`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to load inquiries');
+
+                allInquiries = await response.json();
+                updateStats();
+                applyFilters();
+            } catch (error) {
+                console.error('Error loading inquiries:', error);
+                document.getElementById('inquiriesTableBody').innerHTML = `
+                    <tr>
+                        <td colspan="7" class="px-6 py-16 text-center">
+                            <span class="material-symbols-outlined text-5xl text-red-300 mb-2 block">error</span>
+                            <p class="text-red-500">Failed to load inquiries</p>
+                            <button onclick="loadInquiries()" class="mt-2 text-blue-600 hover:underline">Try again</button>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        // Load agents
+        async function loadAgents() {
+            try {
+                const response = await fetch(`${API_URL}/agents`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    agents = await response.json();
+                    const select = document.getElementById('agentSelect');
+                    select.innerHTML = '<option value="">Select an agent...</option>' +
+                        agents.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+                }
+            } catch (error) {
+                console.error('Error loading agents:', error);
+            }
+        }
+
+        // Open chat
+        function openChat(inquiryId) {
+            window.location.href = `/inquiry-chat.html?id=${inquiryId}`;
+        }
+
+        // Open assign modal
+        function openAssignModal(inquiryId) {
+            currentInquiryId = inquiryId;
+            document.getElementById('assignModal').classList.remove('hidden');
+        }
+
+        // Close assign modal
+        function closeAssignModal() {
+            currentInquiryId = null;
+            document.getElementById('assignModal').classList.add('hidden');
+            document.getElementById('agentSelect').value = '';
+        }
+
+        // Confirm assign
+        async function confirmAssign() {
+            const agentId = document.getElementById('agentSelect').value;
+            if (!agentId) {
+                alert('Please select an agent');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/admin/inquiries/${currentInquiryId}/reassign/${agentId}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to assign agent');
+
+                closeAssignModal();
+                loadInquiries();
+            } catch (error) {
+                console.error('Error assigning agent:', error);
+                alert('Failed to assign agent');
+            }
+        }
+
+        // Close inquiry
+        async function closeInquiry(inquiryId) {
+            if (!confirm('Are you sure you want to close this inquiry?')) return;
+
+            try {
+                const response = await fetch(`${API_URL}/admin/inquiries/${inquiryId}/close`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to close inquiry');
+
+                loadInquiries();
+            } catch (error) {
+                console.error('Error closing inquiry:', error);
+                alert('Failed to close inquiry');
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadInquiries();
+            loadAgents();
+        });
+    </script>
+</body>
+
+</html>

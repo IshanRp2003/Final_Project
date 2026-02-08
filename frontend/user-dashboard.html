@@ -227,16 +227,16 @@
                         <span class="material-symbols-outlined text-primary">notifications</span>
                         Notifications
                     </h3>
-                    <button class="text-xs text-gray-400 hover:text-white">Clear All</button>
+                    <button id="clearNotificationsBtn" class="text-xs text-gray-400 hover:text-white">Clear All</button>
                 </div>
-                <div class="flex flex-col gap-4">
+                <div id="dashboardNotifications" class="flex flex-col gap-4">
                     <div class="flex gap-3 items-start">
                         <div class="bg-primary/20 p-2 rounded-full text-primary shrink-0">
-                            <span class="material-symbols-outlined text-[18px]">waving_hand</span>
+                            <span class="material-symbols-outlined text-[18px]">notifications</span>
                         </div>
                         <div>
-                            <p class="text-sm text-white">Welcome to your dashboard! Start exploring properties.</p>
-                            <p class="text-xs text-gray-500">Just now</p>
+                            <p class="text-sm text-white">Loading your notifications...</p>
+                            <p class="text-xs text-gray-500">Please wait</p>
                         </div>
                     </div>
                 </div>
@@ -395,20 +395,19 @@
                         </select>
                     </div>
 
-                    <!-- Photos -->
+                    <!-- Resources -->
                     <div class="space-y-4">
                         <h3 class="text-lg font-bold text-white flex items-center gap-2"><span
                                 class="w-6 h-6 rounded bg-primary/20 flex items-center justify-center text-primary text-xs">4</span>
-                            Photos</h3>
-                        <div id="dashboardDropZone"
-                            class="border-2 border-dashed border-white/10 rounded-xl p-8 text-center hover:border-primary/50 transition-colors cursor-pointer bg-white/5">
-                            <p class="text-gray-400 mb-2">Drag & Drop Photos</p>
-                            <input type="file" id="dashboardPropertyImages" multiple accept="image/*" class="hidden">
-                            <button type="button" onclick="document.getElementById('dashboardPropertyImages').click()"
-                                class="bg-white/10 text-white px-4 py-2 rounded-lg text-sm hover:bg-white/20">Select
-                                Files</button>
+                            Resource Link</h3>
+                        <div
+                            class="border border-white/10 rounded-xl p-4 bg-white/5">
+                            <label class="block text-sm font-medium text-gray-300 mb-2" for="dashboardDriveLink">Google Drive Link</label>
+                            <input type="url" id="dashboardDriveLink" required
+                                placeholder="https://drive.google.com/file/d/... or /drive/folders/..."
+                                class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary/50">
+                            <p class="text-xs text-gray-400 mt-2">Paste a shareable Google Drive file or folder link containing the property images.</p>
                         </div>
-                        <div id="dashboardImagePreviewContainer" class="grid grid-cols-4 gap-2"></div>
                     </div>
 
                     <!-- Contact -->
@@ -492,6 +491,88 @@
                 localStorage.removeItem('token');
                 window.location.href = '/index.html';
             });
+
+            const API_BASE = 'http://localhost:8080';
+            const token = localStorage.getItem('token');
+            const notificationsContainer = document.getElementById('dashboardNotifications');
+            const clearNotificationsBtn = document.getElementById('clearNotificationsBtn');
+            let notificationItems = [];
+
+            const renderNotifications = (items) => {
+                if (!notificationsContainer) return;
+                if (!items || items.length === 0) {
+                    notificationsContainer.innerHTML = `
+                        <div class="flex gap-3 items-start">
+                            <div class="bg-primary/20 p-2 rounded-full text-primary shrink-0">
+                                <span class="material-symbols-outlined text-[18px]">notifications</span>
+                            </div>
+                            <div>
+                                <p class="text-sm text-white">No notifications yet.</p>
+                                <p class="text-xs text-gray-500">Admin updates will appear here.</p>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                notificationsContainer.innerHTML = items.slice(0, 6).map(n => `
+                    <div class="flex gap-3 items-start">
+                        <div class="bg-${(n.read || n.isRead) ? 'white/10 text-gray-400' : 'primary/20 text-primary'} p-2 rounded-full shrink-0">
+                            <span class="material-symbols-outlined text-[18px]">campaign</span>
+                        </div>
+                        <div>
+                            <p class="text-sm text-white">${n.message || 'New update'}</p>
+                            <p class="text-xs text-gray-500">${n.createdAt ? new Date(n.createdAt).toLocaleString() : 'Just now'}</p>
+                        </div>
+                    </div>
+                `).join('');
+            };
+
+            const loadNotifications = async () => {
+                if (!token) return;
+                try {
+                    const res = await fetch(`${API_BASE}/api/notifications`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!res.ok) return;
+                    notificationItems = await res.json();
+                    renderNotifications(notificationItems);
+                } catch (e) {
+                    console.error('Notification load error:', e);
+                }
+            };
+
+            const startNotificationStream = () => {
+                if (!token) return;
+                const stream = new EventSource(`${API_BASE}/api/notifications/stream?token=${encodeURIComponent(token)}`);
+                stream.addEventListener('notification', (event) => {
+                    try {
+                        const incoming = JSON.parse(event.data);
+                        notificationItems = [incoming, ...notificationItems];
+                        renderNotifications(notificationItems);
+                        loadMyListings();
+                    } catch (e) {
+                        console.error('Notification parse error:', e);
+                    }
+                });
+                stream.onerror = () => {
+                    stream.close();
+                    setTimeout(startNotificationStream, 4000);
+                };
+            };
+
+            if (clearNotificationsBtn) {
+                clearNotificationsBtn.addEventListener('click', async () => {
+                    const unread = notificationItems.filter(n => !(n.read || n.isRead));
+                    await Promise.all(unread.map(n =>
+                        fetch(`${API_BASE}/api/notifications/${n.id}/read`, {
+                            method: 'PUT',
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        }).catch(() => null)
+                    ));
+                    await loadNotifications();
+                });
+            }
 
             // Load Saved Properties
             const loadSavedProperties = async () => {
@@ -587,6 +668,8 @@
             };
 
             loadSavedProperties();
+            loadNotifications();
+            startNotificationStream();
 
             // --- LISTINGS FEATURE LOGIC ---
 
@@ -659,41 +742,30 @@
                 } catch (e) { console.error("Agent load error", e); }
             }
 
-            // Image Upload
-            const fileInput = document.getElementById('dashboardPropertyImages');
-            const dropZone = document.getElementById('dashboardDropZone');
-            const previewContainer = document.getElementById('dashboardImagePreviewContainer');
-            let selectedFiles = [];
+            const isValidGoogleDriveLink = (value) => {
+                try {
+                    const url = new URL(value);
+                    if (url.protocol !== 'https:') return false;
+                    const host = url.hostname.toLowerCase();
+                    const path = url.pathname || '';
 
-            const handleFiles = (files) => {
-                selectedFiles = [...selectedFiles, ...Array.from(files)];
-                updatePreviews();
+                    if (host === 'drive.google.com') {
+                        return /^\/file\/d\/[^/]+/.test(path) ||
+                            /^\/drive\/folders\/[^/]+/.test(path) ||
+                            /^\/drive\/u\/\d+\/folders\/[^/]+/.test(path) ||
+                            (path === '/open' && url.searchParams.has('id')) ||
+                            (path === '/uc' && url.searchParams.has('id'));
+                    }
+
+                    if (host === 'docs.google.com') {
+                        return /^\/(document|spreadsheets|presentation|forms)\/d\/[^/]+/.test(path);
+                    }
+
+                    return false;
+                } catch (e) {
+                    return false;
+                }
             };
-
-            const updatePreviews = () => {
-                previewContainer.innerHTML = '';
-                selectedFiles.forEach((file, index) => {
-                    const div = document.createElement('div');
-                    div.className = 'relative aspect-square rounded-lg overflow-hidden border border-white/20 group';
-                    const img = document.createElement('img');
-                    img.src = URL.createObjectURL(file);
-                    img.className = 'w-full h-full object-cover';
-                    const btn = document.createElement('button');
-                    btn.className = 'absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity';
-                    btn.innerHTML = '<span class="material-symbols-outlined text-[14px]">close</span>';
-                    btn.onclick = (e) => { e.stopPropagation(); selectedFiles.splice(index, 1); updatePreviews(); };
-                    div.appendChild(img);
-                    div.appendChild(btn);
-                    previewContainer.appendChild(div);
-                });
-            };
-
-            if (fileInput) fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
-
-            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => dropZone.addEventListener(e, (ev) => { ev.preventDefault(); ev.stopPropagation(); }));
-            ['dragenter', 'dragover'].forEach(e => dropZone.addEventListener(e, () => dropZone.classList.add('border-primary')));
-            ['dragleave', 'drop'].forEach(e => dropZone.addEventListener(e, () => dropZone.classList.remove('border-primary')));
-            dropZone.addEventListener('drop', (e) => handleFiles(e.dataTransfer.files));
 
             // Submit
             listingForm.addEventListener('submit', async (e) => {
@@ -717,14 +789,17 @@
                     const amenities = Array.from(document.querySelectorAll('#dashboardListingForm input[name="amenities"]:checked')).map(cb => cb.value);
                     amenities.forEach(a => formData.append('amenities', a));
 
-                    formData.append('agent', document.getElementById('dashboardAgentSelect').value); // IMPORTANT: Property entity uses 'agent' string? Or 'agentName'? Let's check DTO. PropertySubmissionDTO usually maps fields.
-                    // PropertyController.submitProperty uses @RequestParam("agent") String agentName.
+                    formData.append('agentName', document.getElementById('dashboardAgentSelect').value);
 
                     formData.append('ownerName', document.getElementById('dashboardContactName').value);
                     formData.append('ownerPhone', document.getElementById('dashboardContactPhone').value);
                     formData.append('ownerEmail', document.getElementById('dashboardContactEmail').value);
-
-                    selectedFiles.forEach(f => formData.append('images', f));
+                    const driveLink = document.getElementById('dashboardDriveLink').value.trim();
+                    if (!isValidGoogleDriveLink(driveLink)) {
+                        alert('Please enter a valid Google Drive file or folder link.');
+                        return;
+                    }
+                    formData.append('driveLink', driveLink);
 
                     const token = localStorage.getItem('token');
                     const API_BASE = 'http://localhost:8080';
@@ -738,8 +813,6 @@
                         alert('Listing submitted successfully!');
                         modal.classList.add('hidden');
                         listingForm.reset();
-                        selectedFiles = [];
-                        updatePreviews();
                         loadMyListings();
                     } else {
                         const err = await res.json();
@@ -792,7 +865,8 @@
                                         <h4 class="text-white font-bold truncate">${p.title}</h4>
                                         <p class="text-gray-400 text-xs truncate">${p.address}</p>
                                         <p class="text-primary font-bold mt-2">LKR ${p.price.toLocaleString()}</p>
-                                        ${p.status === 'REJECTED' && p.rejectionReason ? `<p class="text-red-400 text-xs mt-2">Reason: ${p.rejectionReason}</p>` : ''}
+                                        ${p.adminDecisionMessage ? `<p class="text-blue-300 text-xs mt-2">Admin: ${p.adminDecisionMessage}</p>` : ''}
+                                        ${p.status === 'REJECTED' && p.rejectionReason ? `<p class="text-red-400 text-xs mt-1">Reason: ${p.rejectionReason}</p>` : ''}
                                     </div>
                                 </div>
                              `;

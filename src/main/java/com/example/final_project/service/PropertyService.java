@@ -1,18 +1,26 @@
 package com.example.final_project.service;
 
+import com.example.final_project.model.PropertyMedia;
 import com.example.final_project.model.Property;
 import com.example.final_project.model.PropertyStatus;
 import com.example.final_project.model.PropertyType;
 import com.example.final_project.model.User;
+import com.example.final_project.repository.PropertyMediaRepository;
 import com.example.final_project.repository.PropertyRepository;
 import com.example.final_project.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.net.URI;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -21,7 +29,8 @@ public class PropertyService {
     private final PropertyRepository propertyRepository;
     private final UserRepository userRepository;
     private final FileStorageService fileStorageService;
-    private final com.example.final_project.repository.PropertyMediaRepository propertyMediaRepository;
+    private final PropertyMediaRepository propertyMediaRepository;
+    private final NotificationService notificationService;
 
     public List<Property> getAllProperties() {
         return propertyRepository.findAll();
@@ -48,6 +57,17 @@ public class PropertyService {
                 String username = ((UserDetails) principal).getUsername();
                 User agent = userRepository.findByEmail(username).orElse(null);
                 property.setAgent(agent);
+
+                // Keep owner fields in sync so /my-listings returns agent-created records too.
+                if (property.getOwnerEmail() == null || property.getOwnerEmail().isBlank()) {
+                    property.setOwnerEmail(username);
+                }
+                if ((property.getOwnerName() == null || property.getOwnerName().isBlank())
+                        && agent != null
+                        && agent.getName() != null
+                        && !agent.getName().isBlank()) {
+                    property.setOwnerName(agent.getName());
+                }
             }
         } catch (Exception e) {
             // No authenticated user - that's okay for admin panel
@@ -61,9 +81,9 @@ public class PropertyService {
         return propertyRepository.save(property);
     }
 
-
     // --- ADD THIS NEW METHOD ---
-    public Property saveProperty(Property property, org.springframework.web.multipart.MultipartFile[] files) {
+    @Transactional
+    public Property saveProperty(Property property, MultipartFile[] files) {
         // 1. Set Status to PENDING so it appears in Admin Dashboard
         if (property.getId() == null) {
             property.setStatus(PropertyStatus.PENDING);
@@ -75,13 +95,16 @@ public class PropertyService {
 
         // 3. Handle Image Uploads
         if (files != null && files.length > 0) {
-            for (org.springframework.web.multipart.MultipartFile file : files) {
+            if (savedProperty.getImageUrls() == null) {
+                savedProperty.setImageUrls(new ArrayList<>());
+            }
+            for (MultipartFile file : files) {
                 if (!file.isEmpty()) {
                     // Store the file to the 'uploads' folder
                     String filePath = fileStorageService.storeFile(file);
 
                     // Create a database record linking the photo to the property
-                    com.example.final_project.model.PropertyMedia media = com.example.final_project.model.PropertyMedia.builder()
+                    PropertyMedia media = PropertyMedia.builder()
                             .property(savedProperty)
                             .filePath(filePath)
                             .build();
@@ -91,14 +114,14 @@ public class PropertyService {
                     // Set the first image as the main thumbnail if not set
                     if (savedProperty.getImageUrl() == null) {
                         savedProperty.setImageUrl(filePath);
-                        propertyRepository.save(savedProperty);
                     }
+                    savedProperty.getImageUrls().add(filePath);
                 }
             }
+            propertyRepository.save(savedProperty);
         }
         return savedProperty;
     }
-
 
     public Property updateProperty(Long id, Property updatedProperty) {
         Property existingProperty = propertyRepository.findById(id)
@@ -128,8 +151,21 @@ public class PropertyService {
      * Submit a property from the public form with file uploads.
      * Property status is set to PENDING for admin review.
      */
+    @Transactional
     public Property submitProperty(com.example.final_project.dto.PropertySubmissionDTO dto,
-            org.springframework.web.multipart.MultipartFile[] files) {
+            MultipartFile[] files) {
+        String driveLink = dto.getDriveLink() != null ? dto.getDriveLink().trim() : null;
+        boolean hasDriveLink = driveLink != null && !driveLink.isBlank();
+        boolean hasFiles = files != null && Arrays.stream(files).anyMatch(f -> f != null && !f.isEmpty());
+
+        if (!hasFiles && !hasDriveLink) {
+            throw new RuntimeException("Google Drive link is required when no files are uploaded.");
+        }
+        if (hasDriveLink && !isValidGoogleDriveLink(driveLink)) {
+            throw new RuntimeException(
+                    "Invalid Google Drive link. Please provide a valid drive.google.com/docs.google.com resource URL.");
+        }
+
         // Find agent by name if provided
         User selectedAgent = null;
         if (dto.getAgentName() != null && !dto.getAgentName().isEmpty()) {
@@ -154,6 +190,7 @@ public class PropertyService {
                 .ownerName(dto.getOwnerName())
                 .ownerPhone(dto.getOwnerPhone())
                 .ownerEmail(dto.getOwnerEmail())
+                .driveLink(hasDriveLink ? driveLink : null)
                 .agent(selectedAgent)
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -161,29 +198,36 @@ public class PropertyService {
         // Save property first to get ID
         property = propertyRepository.save(property);
 
+        List<String> storedFilePaths = new ArrayList<>();
+
         // Store uploaded files and create PropertyMedia records
-        if (files != null && files.length > 0) {
-            for (org.springframework.web.multipart.MultipartFile file : files) {
-                if (!file.isEmpty()) {
-                    String filePath = fileStorageService.storeFile(file);
+        try {
+            if (files != null && files.length > 0) {
+                if (property.getImageUrls() == null) {
+                    property.setImageUrls(new ArrayList<>());
+                }
+                for (MultipartFile file : files) {
+                    if (!file.isEmpty()) {
+                        String filePath = fileStorageService.storeFile(file);
+                        storedFilePaths.add(filePath);
 
-                    com.example.final_project.model.PropertyMedia media = com.example.final_project.model.PropertyMedia
-                            .builder()
-                            .property(property)
-                            .filePath(filePath)
-                            .build();
+                        PropertyMedia media = PropertyMedia.builder()
+                                .property(property)
+                                .filePath(filePath)
+                                .build();
+                        propertyMediaRepository.save(media);
 
-                    propertyMediaRepository.save(media);
-
-                    // Set first image as main imageUrl
-                    if (property.getImageUrl() == null) {
-                        property.setImageUrl(filePath);
+                        property.getImageUrls().add(filePath);
+                        if (property.getImageUrl() == null) {
+                            property.setImageUrl(filePath);
+                        }
                     }
                 }
+                property = propertyRepository.save(property);
             }
-
-            // Update property with main image
-            property = propertyRepository.save(property);
+        } catch (RuntimeException ex) {
+            cleanupStoredFiles(storedFilePaths);
+            throw ex;
         }
 
         return property;
@@ -206,7 +250,8 @@ public class PropertyService {
     /**
      * Approve a pending property - changes status to AVAILABLE.
      */
-    public Property approveProperty(Long id) {
+    @Transactional
+    public Property approveProperty(Long id, String adminMessage) {
         Property property = propertyRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Property not found with id: " + id));
 
@@ -215,12 +260,22 @@ public class PropertyService {
         }
 
         property.setStatus(PropertyStatus.AVAILABLE);
-        return propertyRepository.save(property);
+        property.setAdminDecisionMessage(adminMessage);
+        property.setReviewedAt(LocalDateTime.now());
+        Property saved = propertyRepository.save(property);
+
+        notificationService.publishListingDecision(
+                saved.getOwnerEmail(),
+                saved.getId(),
+                adminMessage,
+                "Approved");
+        return saved;
     }
 
     /**
      * Reject a pending property - sets status to REJECTED with reason.
      */
+    @Transactional
     public Property rejectProperty(Long id, String reason) {
         Property property = propertyRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Property not found with id: " + id));
@@ -231,7 +286,16 @@ public class PropertyService {
 
         property.setStatus(PropertyStatus.REJECTED);
         property.setRejectionReason(reason);
-        return propertyRepository.save(property);
+        property.setAdminDecisionMessage(reason);
+        property.setReviewedAt(LocalDateTime.now());
+        Property saved = propertyRepository.save(property);
+
+        notificationService.publishListingDecision(
+                saved.getOwnerEmail(),
+                saved.getId(),
+                reason,
+                "Rejected");
+        return saved;
     }
 
     /**
@@ -239,5 +303,49 @@ public class PropertyService {
      */
     public List<Property> getPropertiesByOwnerEmail(String ownerEmail) {
         return propertyRepository.findByOwnerEmail(ownerEmail);
+    }
+
+    private boolean isValidGoogleDriveLink(String link) {
+        try {
+            URI uri = URI.create(link);
+            if (uri.getScheme() == null || !"https".equalsIgnoreCase(uri.getScheme())) {
+                return false;
+            }
+
+            String host = uri.getHost();
+            if (host == null) {
+                return false;
+            }
+            host = host.toLowerCase(Locale.ROOT);
+            String path = uri.getPath() == null ? "" : uri.getPath();
+            String query = uri.getQuery() == null ? "" : uri.getQuery();
+
+            if ("drive.google.com".equals(host)) {
+                return path.matches("^/file/d/[^/]+.*")
+                        || path.matches("^/drive/folders/[^/]+.*")
+                        || path.matches("^/drive/u/\\d+/folders/[^/]+.*")
+                        || ("/open".equals(path) && query.contains("id="))
+                        || ("/uc".equals(path) && query.contains("id="));
+            }
+
+            if ("docs.google.com".equals(host)) {
+                return path.matches("^/(document|spreadsheets|presentation|forms)/d/[^/]+.*");
+            }
+
+            return false;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private void cleanupStoredFiles(List<String> storedFilePaths) {
+        for (String path : storedFilePaths) {
+            try {
+                fileStorageService.deleteFile(path.substring(path.lastIndexOf('/') + 1));
+            } catch (Exception ignored) {
+                // Keep rollback path best-effort; DB transaction will still revert
+                // property/media records.
+            }
+        }
     }
 }

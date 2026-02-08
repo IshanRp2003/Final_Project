@@ -1,66 +1,70 @@
+﻿const API_BASE = 'http://localhost:8080';
+let currentUser = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Auth Check
     const userStr = localStorage.getItem('user');
     if (!userStr) {
         window.location.href = '/login.html';
         return;
     }
-    const user = JSON.parse(userStr);
 
-    // 2. Update Profile UI
-    // NEW LOGIC: Fetch the unique agent profile using their ID
-    if (user.agentId) {
-        fetch(`http://localhost:8080/api/agents/${user.agentId}`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+    currentUser = JSON.parse(userStr);
+
+    if (currentUser.agentId) {
+        fetch(`${API_BASE}/api/agents/${currentUser.agentId}`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         })
-            .then(res => res.json())
-            .then(agentData => {
-                // Update the UI with the agent's real name from the database
-                const profileNameEl = document.getElementById('sidebar-name');
-                const headerNameEl = document.getElementById('header-name');
-                const sidebarAvatar = document.getElementById('sidebar-avatar');
-
-                if (profileNameEl) profileNameEl.textContent = agentData.name;
-                if (headerNameEl) headerNameEl.textContent = agentData.name.split(' ')[0];
-
-                // Update the profile picture
-                // If the agent has a photo URL in the database, show it
-                if (sidebarAvatar && agentData.profileImageUrl) {
-                    sidebarAvatar.innerHTML = `<img src="${agentData.profileImageUrl}" class="w-full h-full object-cover rounded-full" />`;
-                }
-            })
-            .catch(err => console.error("Could not load agent profile:", err));
+            .then(res => res.ok ? res.json() : Promise.reject(new Error('Failed to load agent profile')))
+            .then(updateProfileUI)
+            .catch(err => console.error('Could not load agent profile:', err));
     }
-    // 3. Initialize Features
+
     initPerformanceChart();
-    initModalLogic(user);
-    initImageUpload();
+    initPropertyModal();
     initDashboardStats();
     initPropertiesView();
 
-    // Make showView global for sidebar onclick
     window.showView = showView;
+    window.openAddPropertyModal = openAddPropertyModal;
+    window.closeAddPropertyModal = closeAddPropertyModal;
+    window.previewAgentPropertyImage = previewAgentPropertyImage;
 });
 
-// ==================== VIEW SWITCHING ====================
+function updateProfileUI(agentData) {
+    const profileNameEl = document.getElementById('sidebar-name');
+    const headerNameEl = document.getElementById('header-name');
+    const sidebarAvatar = document.getElementById('sidebar-avatar');
+
+    if (profileNameEl && agentData?.name) profileNameEl.textContent = agentData.name;
+    if (headerNameEl && agentData?.name) headerNameEl.textContent = agentData.name.split(' ')[0];
+
+    if (sidebarAvatar && agentData?.profileImageUrl) {
+        sidebarAvatar.innerHTML = `<img src="${agentData.profileImageUrl}" class="w-full h-full object-cover rounded-full" />`;
+    }
+}
+
+function getAuthHeaders(withJson = false) {
+    const headers = {};
+    const token = localStorage.getItem('token');
+    if (token) headers.Authorization = `Bearer ${token}`;
+    if (withJson) headers['Content-Type'] = 'application/json';
+    return headers;
+}
+
 function showView(view) {
     const overviewView = document.getElementById('overviewView');
     const propertiesView = document.getElementById('propertiesView');
     const navOverview = document.getElementById('navOverview');
     const navProperties = document.getElementById('navProperties');
 
-    // Hide all views
     overviewView.classList.add('hidden');
     propertiesView.classList.add('hidden');
 
-    // Reset nav styles
     [navOverview, navProperties].forEach(nav => {
         nav.classList.remove('bg-primary/20', 'text-primary', 'border-l-4', 'border-primary');
         nav.classList.add('text-gray-400', 'hover:bg-white/5', 'hover:text-white');
     });
 
-    // Show selected view
     if (view === 'overview') {
         overviewView.classList.remove('hidden');
         navOverview.classList.add('bg-primary/20', 'text-primary', 'border-l-4', 'border-primary');
@@ -73,18 +77,14 @@ function showView(view) {
     }
 }
 
-// ==================== PROPERTIES VIEW ====================
 async function loadMyProperties() {
     const tableBody = document.getElementById('propertiesTableBody');
     const countEl = document.getElementById('propertiesCount');
     const loadingRow = document.getElementById('propertiesLoading');
 
     try {
-        const token = localStorage.getItem('token');
-        const API_BASE = 'http://localhost:8080';
-
         const res = await fetch(`${API_BASE}/api/properties/my-listings`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: getAuthHeaders()
         });
 
         if (!res.ok) throw new Error('Failed to fetch properties');
@@ -93,7 +93,7 @@ async function loadMyProperties() {
         if (loadingRow) loadingRow.remove();
         if (countEl) countEl.textContent = `${properties.length} properties`;
 
-        if (properties.length === 0) {
+        if (!properties.length) {
             tableBody.innerHTML = `
                 <tr>
                     <td colspan="6" class="px-4 py-12 text-center text-gray-400">
@@ -104,28 +104,38 @@ async function loadMyProperties() {
             return;
         }
 
-        tableBody.innerHTML = properties.map(p => `
-            <tr class="hover:bg-white/5 transition-colors">
-                <td class="px-4 py-3 flex items-center gap-3">
-                    <div class="w-12 h-12 rounded-lg bg-[#222] overflow-hidden shrink-0">
-                        ${p.images && p.images.length > 0
-                ? `<img src="data:image/jpeg;base64,${p.images[0].imageData}" class="w-full h-full object-cover" />`
-                : `<div class="w-full h-full flex items-center justify-center text-gray-500"><span class="material-symbols-outlined">image</span></div>`}
-                    </div>
-                    <span class="text-white font-medium">${p.title || 'Untitled'}</span>
-                </td>
-                <td class="px-4 py-3">Rs. ${Number(p.price || 0).toLocaleString()}</td>
-                <td class="px-4 py-3">${p.type || 'N/A'}</td>
-                <td class="px-4 py-3">${p.address || 'N/A'}</td>
-                <td class="px-4 py-3">
-                    <span class="px-2 py-1 rounded text-xs font-bold ${p.status === 'PENDING' ? 'bg-yellow-500/10 text-yellow-500' : 'bg-primary/10 text-primary'}">${p.status || 'Active'}</span>
-                </td>
-                <td class="px-4 py-3">
-                    <a href="/view-property.html?id=${p.id}" class="text-primary hover:text-white transition-colors mr-3">View</a>
-                </td>
-            </tr>
-        `).join('');
+        tableBody.innerHTML = properties.map(p => {
+            const thumb = p.imageUrl || (Array.isArray(p.imageUrls) && p.imageUrls.length ? p.imageUrls[0] : null);
+            const statusClass = p.status === 'PENDING'
+                ? 'bg-yellow-500/10 text-yellow-500'
+                : p.status === 'SOLD'
+                    ? 'bg-red-500/10 text-red-500'
+                    : p.status === 'RENTED'
+                        ? 'bg-purple-500/10 text-purple-500'
+                        : 'bg-primary/10 text-primary';
 
+            return `
+                <tr class="hover:bg-white/5 transition-colors">
+                    <td class="px-4 py-3 flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-lg bg-[#222] overflow-hidden shrink-0">
+                            ${thumb
+                    ? `<img src="${thumb}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\\"w-full h-full flex items-center justify-center text-gray-500\\"><span class=\\"material-symbols-outlined\\">image</span></div>'" />`
+                    : `<div class="w-full h-full flex items-center justify-center text-gray-500"><span class="material-symbols-outlined">image</span></div>`}
+                        </div>
+                        <span class="text-white font-medium">${p.title || 'Untitled'}</span>
+                    </td>
+                    <td class="px-4 py-3">Rs. ${Number(p.price || 0).toLocaleString()}</td>
+                    <td class="px-4 py-3">${p.type || 'N/A'}</td>
+                    <td class="px-4 py-3">${p.address || 'N/A'}</td>
+                    <td class="px-4 py-3">
+                        <span class="px-2 py-1 rounded text-xs font-bold ${statusClass}">${p.status || 'AVAILABLE'}</span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <a href="/view-property.html?id=${p.id}" class="text-primary hover:text-white transition-colors mr-3">View</a>
+                    </td>
+                </tr>
+            `;
+        }).join('');
     } catch (err) {
         console.error('Error loading properties:', err);
         if (loadingRow) loadingRow.remove();
@@ -140,12 +150,13 @@ async function loadMyProperties() {
 
 function initPropertiesView() {
     const btnAddProperty = document.getElementById('btn-add-property');
-    const modal = document.getElementById('listing-modal');
+    const btnNewListing = document.getElementById('btn-new-listing');
 
-    if (btnAddProperty && modal) {
-        btnAddProperty.addEventListener('click', () => {
-            modal.classList.remove('hidden');
-        });
+    if (btnAddProperty) {
+        btnAddProperty.addEventListener('click', openAddPropertyModal);
+    }
+    if (btnNewListing) {
+        btnNewListing.addEventListener('click', openAddPropertyModal);
     }
 }
 
@@ -153,20 +164,13 @@ async function initDashboardStats() {
     try {
         const token = localStorage.getItem('token');
         if (!token) return;
-        const API_BASE = 'http://localhost:8080';
 
-        // Fetch My Listings
         const res = await fetch(`${API_BASE}/api/properties/my-listings`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: getAuthHeaders()
         });
 
         if (res.ok) {
             const listings = await res.json();
-            // Update Active Listings Count
-            // Assuming the 2nd card is Active Listings (index 1)
-            // Or better, add an ID to the element in HTML. 
-            // Since I didn't add IDs to stats cards, I'll select by text content or structure.
-            // Let's rely on structure for now: 2nd .bg-card-dark h3
             const statsCards = document.querySelectorAll('.bg-card-dark h3');
             if (statsCards[1]) {
                 statsCards[1].innerText = listings.length;
@@ -181,7 +185,6 @@ function initPerformanceChart() {
     const ctx = document.getElementById('performanceChart');
     if (!ctx) return;
 
-    // Chart.js Configuration
     const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 400);
     gradient.addColorStop(0, 'rgba(17, 214, 97, 0.5)');
     gradient.addColorStop(1, 'rgba(17, 214, 97, 0.0)');
@@ -205,196 +208,203 @@ function initPerformanceChart() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false }
-            },
+            plugins: { legend: { display: false } },
             scales: {
                 x: { grid: { color: 'rgba(255, 255, 255, 0.05)', borderColor: 'transparent' }, ticks: { color: '#6b7280' } },
                 y: { grid: { color: 'rgba(255, 255, 255, 0.05)', borderColor: 'transparent' }, ticks: { color: '#6b7280' }, beginAtZero: true }
             },
-            interaction: { intersect: false, mode: 'index' },
+            interaction: { intersect: false, mode: 'index' }
         }
     });
 }
 
-function initModalLogic(user) {
-    const modal = document.getElementById('listing-modal');
-    const btnNewListing = document.getElementById('btn-new-listing');
-    const btnCloseModal = document.getElementById('btn-close-modal');
-    const form = document.getElementById('dashboardListingForm');
+function initPropertyModal() {
+    const form = document.getElementById('addPropertyForm');
+    if (!form) return;
 
-    // Auto-fill agent select
-    const agentSelect = document.getElementById('dashboardAgentSelect');
-    if (agentSelect) {
-        agentSelect.innerHTML = `<option value="${user.name}">${user.name}</option>`;
-        agentSelect.value = user.name;
-    }
-
-    if (btnNewListing) {
-        btnNewListing.addEventListener('click', () => {
-            modal.classList.remove('hidden');
+    const descTextarea = form.querySelector('textarea[name="description"]');
+    if (descTextarea) {
+        descTextarea.addEventListener('input', () => {
+            document.getElementById('agentDescCharCount').textContent = String(descTextarea.value.length);
         });
     }
 
-    if (btnCloseModal) {
-        btnCloseModal.addEventListener('click', () => modal.classList.add('hidden'));
-    }
+    form.addEventListener('submit', submitAgentPropertyForm);
 
-    if (modal) {
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) modal.classList.add('hidden');
-        });
-    }
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeAddPropertyModal();
+    });
+}
 
-    // Form Submit
-    if (form) {
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = form.querySelector('button[type="submit"]');
-            const originalText = btn.textContent;
-            btn.disabled = true;
-            btn.textContent = 'Submitting...';
+function openAddPropertyModal() {
+    const modal = document.getElementById('addPropertyModal');
+    const form = document.getElementById('addPropertyForm');
+    if (!modal || !form) return;
 
-            try {
-                const formData = new FormData();
-                // Collect basic fields
-                ['dashboardPropertyTitle', 'dashboardPropertyDescription', 'dashboardPropertyAddress',
-                    'dashboardPropertyPrice', 'dashboardPropertyType', 'dashboardBedrooms',
-                    'dashboardBathrooms', 'dashboardAreaSqFt', 'dashboardContactName',
-                    'dashboardContactPhone', 'dashboardContactEmail'].forEach(id => {
-                        const key = id.replace('dashboardProperty', '').replace('dashboard', '').replace('Contact', 'owner').toLowerCase(); // naive mapping
-                        // Better explicit mapping:
-                    });
+    form.reset();
+    document.getElementById('agentDescCharCount').textContent = '0';
+    document.getElementById('agentImagePreviewContainer').classList.add('hidden');
 
-                // Explicit Mapping to match Backend DTO
-                formData.append('title', document.getElementById('dashboardPropertyTitle').value);
-                formData.append('description', document.getElementById('dashboardPropertyDescription').value);
-                formData.append('address', document.getElementById('dashboardPropertyAddress').value);
-                formData.append('price', document.getElementById('dashboardPropertyPrice').value);
-                formData.append('type', document.getElementById('dashboardPropertyType').value);
-                formData.append('bedrooms', document.getElementById('dashboardBedrooms').value || 0);
-                formData.append('bathrooms', document.getElementById('dashboardBathrooms').value || 0);
-                formData.append('areaSqFt', document.getElementById('dashboardAreaSqFt').value || 0);
-                formData.append('agent', user.name);
+    loadAgentsForAgentDropdown();
 
-                formData.append('ownerName', document.getElementById('dashboardContactName').value);
-                formData.append('ownerPhone', document.getElementById('dashboardContactPhone').value);
-                formData.append('ownerEmail', document.getElementById('dashboardContactEmail').value);
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => {
+        const firstInput = form.querySelector('input[name="title"]');
+        if (firstInput) firstInput.focus();
+    }, 0);
+}
 
-                // Amenities
-                const amenities = Array.from(document.querySelectorAll('#dashboardListingForm input[name="amenities"]:checked')).map(cb => cb.value);
-                amenities.forEach(a => formData.append('amenities', a));
+function closeAddPropertyModal() {
+    const modal = document.getElementById('addPropertyModal');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+}
 
-                // Images
-                if (window.selectedFiles) {
-                    window.selectedFiles.forEach(f => formData.append('images', f));
-                }
+function previewAgentPropertyImage(url) {
+    const container = document.getElementById('agentImagePreviewContainer');
+    const img = document.getElementById('agentImagePreview');
+    if (!container || !img) return;
 
-                const token = localStorage.getItem('token');
-                const API_BASE = 'http://localhost:8080';
-
-                const res = await fetch(`${API_BASE}/api/properties/submit`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }, // Helper not needed here as we use fetch directly
-                    body: formData
-                });
-
-                if (res.ok) {
-                    alert('Listing submitted successfully!');
-                    modal.classList.add('hidden');
-                    form.reset();
-                    // Clear images
-                    window.selectedFiles = [];
-                    const container = document.getElementById('dashboardImagePreviewContainer');
-                    if (container) container.innerHTML = '';
-                    // Ideally refresh "Active Listings" count here
-                } else {
-                    const err = await res.json();
-                    alert('Failed: ' + (err.message || 'Unknown error'));
-                }
-
-            } catch (err) {
-                console.error(err);
-                alert('Error submitting listing: ' + err.message);
-            } finally {
-                btn.disabled = false;
-                btn.textContent = originalText;
-            }
-        });
+    if (url && url.trim()) {
+        img.src = url;
+        container.classList.remove('hidden');
+        img.onerror = () => container.classList.add('hidden');
+    } else {
+        container.classList.add('hidden');
     }
 }
 
-function initImageUpload() {
-    const fileInput = document.getElementById('dashboardPropertyImages');
-    const dropZone = document.getElementById('dashboardDropZone');
-    const previewContainer = document.getElementById('dashboardImagePreviewContainer');
-    window.selectedFiles = []; // Global to store for submission
+async function loadAgentsForAgentDropdown(selectedAgentId = null) {
+    const select = document.getElementById('agentAssignedAgentId');
+    if (!select) return;
 
-    if (!dropZone || !fileInput) return;
+    try {
+        let response = await fetch(`${API_BASE}/api/agents`, { headers: getAuthHeaders() });
+        if (!response.ok) {
+            response = await fetch(`${API_BASE}/api/agents/public`);
+        }
+        if (!response.ok) {
+            throw new Error('Failed to load agents');
+        }
 
-    const handleFiles = (files) => {
-        window.selectedFiles = [...window.selectedFiles, ...Array.from(files)];
-        updatePreviews();
-    };
+        const agents = await response.json();
+        select.innerHTML = '';
 
-    const updatePreviews = () => {
-        previewContainer.innerHTML = '';
-        window.selectedFiles.forEach((file, index) => {
-            const div = document.createElement('div');
-            div.className = 'relative aspect-square rounded-lg overflow-hidden border border-white/20 group';
+        if (!Array.isArray(agents) || agents.length === 0) {
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'No agents available';
+            option.disabled = true;
+            option.selected = true;
+            select.appendChild(option);
+            return;
+        }
 
-            const img = document.createElement('img');
-            img.src = URL.createObjectURL(file);
-            img.className = 'w-full h-full object-cover';
+        const preferredId = selectedAgentId
+            || (currentUser?.agentId ? String(currentUser.agentId) : null)
+            || null;
+        const preferredName = currentUser?.name ? currentUser.name.trim().toLowerCase() : '';
 
-            const btn = document.createElement('button');
-            btn.className = 'absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity';
-            btn.innerHTML = '<span class="material-symbols-outlined text-[14px]">close</span>';
-            btn.type = 'button';
-            btn.onclick = (e) => {
-                e.stopPropagation();
-                window.selectedFiles.splice(index, 1);
-                updatePreviews();
-            };
-
-            div.appendChild(img);
-            div.appendChild(btn);
-            previewContainer.appendChild(div);
+        agents.forEach(agent => {
+            const option = document.createElement('option');
+            option.value = String(agent.id);
+            option.textContent = agent.name;
+            if ((preferredId && String(agent.id) === String(preferredId))
+                || (!preferredId && preferredName && agent.name?.trim().toLowerCase() === preferredName)) {
+                option.selected = true;
+            }
+            select.appendChild(option);
         });
-    };
 
-    fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
-
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, preventDefaults, false);
-    });
-
-    function preventDefaults(e) {
-        e.preventDefault();
-        e.stopPropagation();
+        if (!select.value && select.options.length > 0) {
+            select.selectedIndex = 0;
+        }
+    } catch (error) {
+        console.error('Error loading agents for dropdown:', error);
     }
+}
 
-    ['dragenter', 'dragover'].forEach(eventName => {
-        dropZone.addEventListener(eventName, highlight, false);
-    });
+async function submitAgentPropertyForm(event) {
+    event.preventDefault();
 
-    ['dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, unhighlight, false);
-    });
+    const form = event.currentTarget;
+    const submitBtn = document.getElementById('agentSubmitPropertyBtn');
+    const originalBtnHtml = submitBtn.innerHTML;
 
-    function highlight(e) {
-        dropZone.classList.add('border-primary');
-    }
+    try {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `
+            <svg class="w-4 h-4 mr-2 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            Creating...
+        `;
 
-    function unhighlight(e) {
-        dropZone.classList.remove('border-primary');
-    }
+        const formData = new FormData(form);
+        const facilities = Array.from(
+            form.querySelectorAll('input[name="facilities[]"]:checked'),
+            cb => cb.value
+        );
+        const additionalImages = (formData.get('additionalImages') || '')
+            .split(',')
+            .map(v => v.trim())
+            .filter(Boolean);
 
-    dropZone.addEventListener('drop', handleDrop, false);
+        const assignedAgentId = formData.get('assignedAgentId');
+        if (!assignedAgentId) {
+            throw new Error('Please select an agent name before submitting.');
+        }
 
-    function handleDrop(e) {
-        const dt = e.dataTransfer;
-        const files = dt.files;
-        handleFiles(files);
+        const propertyData = {
+            title: formData.get('title'),
+            address: formData.get('address'),
+            price: parseFloat(formData.get('price')),
+            type: formData.get('type'),
+            status: formData.get('status'),
+            description: formData.get('description') || null,
+            bedrooms: formData.get('bedrooms') ? parseInt(formData.get('bedrooms'), 10) : null,
+            bathrooms: formData.get('bathrooms') ? parseInt(formData.get('bathrooms'), 10) : null,
+            areaSqFt: formData.get('areaSqFt') ? parseFloat(formData.get('areaSqFt')) : null,
+            imageUrl: formData.get('imageUrl') || null,
+            imageUrls: additionalImages,
+            facilities,
+            houseRules: formData.get('houseRules') || null,
+            assignedAgent: { id: parseInt(assignedAgentId, 10) }
+        };
+
+        const response = await fetch(`${API_BASE}/api/properties`, {
+            method: 'POST',
+            headers: getAuthHeaders(true),
+            body: JSON.stringify(propertyData)
+        });
+
+        if (!response.ok) {
+            let message = 'Failed to create property.';
+            try {
+                const body = await response.json();
+                if (body?.message) message = body.message;
+            } catch (_) {
+                const text = await response.text();
+                if (text) message = text;
+            }
+            throw new Error(message);
+        }
+
+        closeAddPropertyModal();
+        form.reset();
+        document.getElementById('agentDescCharCount').textContent = '0';
+        document.getElementById('agentImagePreviewContainer').classList.add('hidden');
+
+        await Promise.all([loadMyProperties(), initDashboardStats()]);
+        alert('Property created successfully.');
+    } catch (error) {
+        console.error('Error creating property:', error);
+        alert(error.message || 'Failed to create property.');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnHtml;
     }
 }

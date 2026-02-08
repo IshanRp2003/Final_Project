@@ -18,4 +18,7 @@ public interface AgentRepository extends JpaRepository<Agent, Long> {
     long countByStatus(AgentStatus status);
 
     List<Agent> findByNameContainingIgnoreCase(String name);
+
+    // Find agent by their linked user account
+    Optional<Agent> findByLinkedUserId(Long userId);
 }

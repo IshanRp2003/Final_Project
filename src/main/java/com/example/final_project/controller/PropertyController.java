@@ -5,6 +5,7 @@ import com.example.final_project.model.PropertyType;
 import com.example.final_project.service.PropertyService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -40,6 +41,7 @@ public class PropertyController {
      * Uses the user's email from JWT token to find matching ownerEmail.
      */
     @GetMapping("/my-listings")
+    @PreAuthorize("hasAnyRole('USER','AGENT','SELLER','ADMIN')")
     public ResponseEntity<?> getMyListings(
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
         try {
@@ -71,7 +73,8 @@ public class PropertyController {
         }
     }
 
-    @PostMapping("/submit")
+    @PostMapping(value = "/submit", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('USER','AGENT','SELLER','ADMIN')")
     public ResponseEntity<?> submitProperty(
             @RequestParam("title") String title,
             @RequestParam("description") String description,
@@ -84,7 +87,8 @@ public class PropertyController {
             @RequestParam(value = "amenities", required = false) java.util.List<String> amenities,
             @RequestParam("ownerName") String ownerName,
             @RequestParam("ownerPhone") String ownerPhone,
-            @RequestParam("ownerEmail") String ownerEmail,
+            @RequestParam(value = "ownerEmail", required = false) String ownerEmail,
+            @RequestParam(value = "driveLink", required = false) String driveLink,
             @RequestParam(value = "agentName", required = false) String agentName,
             @RequestParam(value = "images", required = false) org.springframework.web.multipart.MultipartFile[] images) {
 
@@ -106,8 +110,14 @@ public class PropertyController {
             dto.setAmenities(amenities);
             dto.setOwnerName(ownerName);
             dto.setOwnerPhone(ownerPhone);
-            dto.setOwnerEmail(ownerEmail);
+            String authenticatedEmail = extractAuthenticatedEmail();
+            dto.setOwnerEmail(authenticatedEmail != null ? authenticatedEmail : ownerEmail);
+            dto.setDriveLink(driveLink);
             dto.setAgentName(agentName);
+
+            if (dto.getOwnerEmail() == null || dto.getOwnerEmail().isBlank()) {
+                throw new RuntimeException("Owner email could not be determined from session or request.");
+            }
 
             // Submit property
             Property property = service.submitProperty(dto, images);
@@ -132,7 +142,7 @@ public class PropertyController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('SELLER') or hasRole('ADMIN') or hasRole('AGENT')")
     public ResponseEntity<Property> createProperty(@RequestBody Property property) {
         return ResponseEntity.ok(service.createProperty(property));
     }
@@ -148,5 +158,21 @@ public class PropertyController {
     public ResponseEntity<Void> deleteProperty(@PathVariable Long id) {
         service.deleteProperty(id);
         return ResponseEntity.ok().build();
+    }
+
+    private String extractAuthenticatedEmail() {
+        try {
+            Object principal = org.springframework.security.core.context.SecurityContextHolder.getContext()
+                    .getAuthentication().getPrincipal();
+            if (principal instanceof org.springframework.security.core.userdetails.UserDetails) {
+                return ((org.springframework.security.core.userdetails.UserDetails) principal).getUsername();
+            }
+            if (principal != null && !"anonymousUser".equalsIgnoreCase(principal.toString())) {
+                return principal.toString();
+            }
+        } catch (Exception ignored) {
+            // Keep fallback to request ownerEmail
+        }
+        return null;
     }
 }

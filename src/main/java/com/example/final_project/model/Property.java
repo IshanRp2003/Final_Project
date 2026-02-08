@@ -1,9 +1,21 @@
 package com.example.final_project.model;
 
-import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.CascadeType;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Transient;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,6 +23,8 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @Builder
@@ -34,18 +48,20 @@ public class Property {
     private BigDecimal price;
 
     @Enumerated(EnumType.STRING)
-    private PropertyType type; // SALE or RENT
+    private PropertyType type;
 
     @Enumerated(EnumType.STRING)
     private PropertyStatus status;
 
-    private String imageUrl; // Main thumbnail
+    // Main thumbnail shown in cards.
+    private String imageUrl;
 
+    // All image URLs for gallery/detail views.
     @ElementCollection
     @CollectionTable(name = "property_images", joinColumns = @JoinColumn(name = "property_id"))
     @Column(name = "image_url")
     @Builder.Default
-    private java.util.List<String> imageUrls = new java.util.ArrayList<>();
+    private List<String> imageUrls = new ArrayList<>();
 
     private Integer bedrooms;
     private Integer bathrooms;
@@ -55,7 +71,7 @@ public class Property {
     @CollectionTable(name = "property_facilities", joinColumns = @JoinColumn(name = "property_id"))
     @Column(name = "facility")
     @Builder.Default
-    private java.util.List<String> facilities = new java.util.ArrayList<>();
+    private List<String> facilities = new ArrayList<>();
 
     @Column(columnDefinition = "TEXT")
     private String houseRules;
@@ -68,37 +84,28 @@ public class Property {
     @JoinColumn(name = "assigned_agent_id")
     private Agent assignedAgent;
 
-    // Seller contact information for listing submissions
     private String ownerName;
     private String ownerPhone;
     private String ownerEmail;
+    private String driveLink;
 
     @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private java.util.List<PropertyMedia> mediaFiles = new java.util.ArrayList<>();
+    @JsonIgnore
+    private List<PropertyMedia> mediaFiles = new ArrayList<>();
 
-    private String rejectionReason; // Admin's reason for rejecting submission
+    private String rejectionReason;
 
+    @Column(columnDefinition = "TEXT")
+    private String adminDecisionMessage;
+
+    private LocalDateTime reviewedAt;
     private LocalDateTime createdAt;
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
-    }
-
-    // --- ADD THIS CODE TO Property.java ---
-
-    // 1. Link to the media table
-    @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    private java.util.List<PropertyMedia> media;
-
-    // 2. Create a virtual list of URLs for the frontend to read
-    @Transient // This means "don't create a column in the database for this, just calculate it"
-    public java.util.List<String> getImageUrls() {
-        if (media == null) return new java.util.ArrayList<>();
-        // Convert the list of Media objects to a list of String paths (e.g., "/uploads/img1.jpg")
-        return media.stream()
-                .map(m -> "/uploads/" + java.nio.file.Paths.get(m.getFilePath()).getFileName().toString())
-                .collect(java.util.stream.Collectors.toList());
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
     }
 }
